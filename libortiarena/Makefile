@@ -12,16 +12,25 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
     SO_EXT = so
     LDFLAGS = -shared -Wl,-soname,lib$(TARGET).$(SO_EXT)
-	PATH_VAR_NAME=LD_LIBRARY_PATH=$(BUILD_DIR)
+    PATH_VAR_NAME=LD_LIBRARY_PATH=$(BUILD_DIR)
+    OS_SPECIFIC_FILES=$(filter %_linux.c, $(wildcard $(SRC_DIR)/*_linux.c))
 else ifeq ($(UNAME_S),Darwin)
     SO_EXT = dylib
     LDFLAGS = -shared -Wl,-install_name,@rpath/lib$(TARGET).$(SO_EXT)
-	PATH_VAR_NAME=DYLD_LIBRARY_PATH=$(BUILD_DIR)
+    PATH_VAR_NAME=DYLD_LIBRARY_PATH=$(BUILD_DIR)
+    OS_SPECIFIC_FILES=$(filter %_macos.c, $(wildcard $(SRC_DIR)/*_macos.c))
 endif
 
-# Objects
-OBJS=$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(wildcard $(SRC_DIR)/*.c))
-TEST_OBJS=$(patsubst $(TESTS_DIR)/%.c, $(BUILD_DIR)/%.o, $(wildcard $(TESTS_DIR)/*.c))
+# Source files (shared and OS-specific)
+SHARED_SOURCE_FILES=$(filter-out %_linux.c %_macos.c, $(wildcard $(SRC_DIR)/*.c))
+ALL_SOURCE_FILES=$(SHARED_SOURCE_FILES) $(OS_SPECIFIC_FILES)
+
+# Object files
+OBJS=$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(ALL_SOURCE_FILES))
+
+# Test files (specify manually if needed)
+TEST_FILES=$(wildcard $(TESTS_DIR)/*.c)
+TEST_OBJS=$(patsubst $(TESTS_DIR)/%.c, $(BUILD_DIR)/%.o, $(TEST_FILES))
 TEST_EXEC=$(BUILD_DIR)/test_$(TARGET)
 
 all: $(BUILD_DIR)/lib$(TARGET).$(SO_EXT)

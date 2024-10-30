@@ -1,7 +1,11 @@
+#include "./valloc.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define ORTI_BUCKET_SIZE_MB 2048
+#define ORTI_BYTES_IN_MB 1048576
 
 typedef struct {
   size_t total_size;
@@ -9,21 +13,24 @@ typedef struct {
   void *bucket;
 } Arena;
 
+// TODO Is there a way to move chunk of bytes back inside the bucket
+
 /**
  * Create a new arena of the specified size and return it.
  *
  * @param size_t size
  * @return *Arena
  */
-Arena *new_arena(size_t size) {
-  Arena *arena = malloc(sizeof(Arena));
-  arena->bucket = malloc(size);
-  if (NULL == arena->bucket) {
+Arena *new_arena() {
+  Arena *arena = virtual_alloc((size_t)ORTI_BUCKET_SIZE_MB * ORTI_BYTES_IN_MB);
+  if (NULL == arena) {
     perror("cannot allocate arena");
     return NULL;
   }
-  arena->total_size = size;
+  arena->total_size = (size_t)ORTI_BUCKET_SIZE_MB * ORTI_BYTES_IN_MB;
   arena->used_size = 0;
+  arena->bucket = (void *)((char *)arena + sizeof(Arena));
+
   return arena;
 }
 
@@ -32,9 +39,9 @@ Arena *new_arena(size_t size) {
  *
  * @param Arena **arena
  */
-void arena_release(Arena *arena) {
-  free(arena->bucket);
-  free(arena);
+void arena_release(Arena **arena) {
+  virtual_free(&arena, (*arena)->total_size);
+  (*arena) = NULL;
 }
 
 /**
@@ -53,8 +60,16 @@ void arena_clear(Arena *arena) { arena->used_size = 0; }
  */
 void *arena_push_no_zero(Arena *arena, size_t size) {
   if (arena->total_size < (arena->used_size + size)) {
-    perror("Arena out of memory");
-    return NULL;
+    size_t arena_previous_size = arena->total_size;
+    while (arena->total_size < (arena->used_size + size)) {
+      arena->total_size += ORTI_BUCKET_SIZE_MB;
+    }
+    arena->bucket = realloc(arena->bucket, arena->total_size);
+    if (NULL == arena->bucket) {
+      perror("Can't reallocate arena size");
+      arena->total_size -= arena_previous_size;
+      return NULL;
+    }
   }
   void *result = arena->bucket + arena->used_size;
   arena->used_size += size;

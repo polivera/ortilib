@@ -16,16 +16,13 @@ typedef struct {
  * initializes it. The memory for the arena itself is dynamically allocated and
  * managed by the caller.
  *
- * @param size The size of the memory block to allocate for the arena (in
- * bytes).
- *
  * @return A pointer to the newly created Arena structure, or NULL if memory
  * allocation fails.
  *
  * @note The caller is responsible for releasing the memory of the arena using
  * `arena_release()`.
  */
-Arena *new_arena(size_t size);
+Arena *new_arena();
 
 /**
  * @brief Releases the memory associated with an arena.
@@ -38,7 +35,7 @@ Arena *new_arena(size_t size);
  *
  * @note After calling this function, the arena pointer becomes null
  */
-void arena_release(Arena *arena);
+void arena_release(Arena **arena);
 
 /**
  * @brief Clears the arena by resetting the used memory to 0.
