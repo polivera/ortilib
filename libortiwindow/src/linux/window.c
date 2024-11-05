@@ -1,4 +1,5 @@
-#include "xdg-shell-protocol.h"
+#include "xdg-shell.h"
+#include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -6,8 +7,6 @@
 #include <unistd.h>
 #include <wayland-client-core.h>
 #include <wayland-client-protocol.h>
-
-#include <fcntl.h>
 #include <wayland-util.h>
 
 // The compositor lives in the server but we need to access it to create a
@@ -27,10 +26,6 @@ struct wl_buffer *buffer;
 // Shared memory for the buffer
 struct wl_shm *shm;
 
-struct xdg_wm_base *xdg_shell;
-// This is what we consider the window
-struct xdg_toplevel *xdg_top_level;
-
 /**
  * INPUTS
  */
@@ -38,11 +33,10 @@ struct wl_seat *seat;
 struct wl_keyboard *keyboard;
 
 // RGBA pixel
-uint8_t *pixel;
+uint8_t *bitmap;
 
 uint16_t window_width = 1024;
-uint16_t window_heigh = 768;
-uint8_t color;
+uint16_t window_height = 768;
 uint8_t close_window;
 
 /**
@@ -61,35 +55,57 @@ int32_t allocate_shared_memory(uint64_t size) {
 
 /**
  * This should be call every time the window is resize
- * TODO: Again we have a virtual allocation that might be replace with arena
  */
 void resize_window() {
-  printf("Resize the window! %d\n", color);
-  int32_t fd = allocate_shared_memory(window_width * window_heigh * 4);
-  pixel = mmap(0, window_width * window_heigh * 4, PROT_READ | PROT_WRITE,
-               MAP_SHARED, fd, 0);
-  if (NULL == pixel) {
+  int32_t fd = allocate_shared_memory(window_width * window_height * 4);
+  // TODO: Again we have a virtual allocation that might be replace with arena
+  bitmap = mmap(0, window_width * window_height * 4, PROT_READ | PROT_WRITE,
+                MAP_SHARED, fd, 0);
+  if (NULL == bitmap) {
     printf("cannot allocate pixel");
     return;
   }
   struct wl_shm_pool *pool =
-      wl_shm_create_pool(shm, fd, window_width * window_heigh * 4);
+      wl_shm_create_pool(shm, fd, window_width * window_height * 4);
   // NOTE: Here is the stride
-  buffer = wl_shm_pool_create_buffer(pool, 0, window_width, window_heigh,
+  buffer = wl_shm_pool_create_buffer(pool, 0, window_width, window_height,
                                      window_width * 4, WL_SHM_FORMAT_ARGB8888);
   wl_shm_pool_destroy(pool);
   close(fd);
 }
 
+void draw_weird_shit(uint32_t x_offset, uint32_t y_offset) {
+  uint32_t stride = window_width * 4;
+  uint8_t *row = bitmap;
+  for (uint16_t y = 0; y < window_height; y++) {
+    uint8_t *pixel = row;
+    for (uint16_t x = 0; x < window_width; x++) {
+      *pixel = (x + x_offset);
+      pixel++;
+
+      *pixel = (y + y_offset);
+      pixel++;
+
+      *pixel = 0;
+      pixel++;
+
+      *pixel = 255;
+      pixel++;
+    }
+    row += stride;
+  }
+}
+
+uint16_t my_x_offset = 0;
 void draw() {
-  color++;
-  memset(pixel, color, window_width * window_heigh * 4);
+  draw_weird_shit(my_x_offset, my_x_offset * 2);
+  ++my_x_offset;
 }
 
 void make_frame() {
   draw();
   wl_surface_attach(surface, buffer, 0, 0);
-  wl_surface_damage_buffer(surface, 0, 0, window_width, window_heigh);
+  wl_surface_damage_buffer(surface, 0, 0, window_width, window_height);
   wl_surface_commit(surface);
 }
 
@@ -104,43 +120,6 @@ void frame_new(void *data, struct wl_callback *cb, uint32_t cb_data) {
   make_frame();
 }
 struct wl_callback_listener cb_listener = {.done = frame_new};
-
-void x_surface_config(void *data, struct xdg_surface *x_surface,
-                      uint32_t serial) {
-  xdg_surface_ack_configure(x_surface, serial);
-  printf("XDG configuration \n");
-  if (!pixel) {
-    resize_window();
-  }
-  make_frame();
-}
-
-struct xdg_surface_listener x_listener = {.configure = x_surface_config};
-
-void top_config(void *data, struct xdg_toplevel *top_level, int32_t new_width,
-                int32_t new_height, struct wl_array *states) {
-  if (!new_width || !new_height) {
-    return;
-  }
-
-  if (window_width != new_width || window_heigh != new_height) {
-    munmap(pixel, new_width * new_height);
-    window_width = new_width;
-    window_heigh = new_height;
-    resize_window();
-  }
-}
-
-void top_close(void *data, struct xdg_toplevel *top_level) { close_window = 1; }
-
-struct xdg_toplevel_listener toplevel_listener = {.configure = top_config,
-                                                  .close = top_close};
-
-void shell_ping(void *data, struct xdg_wm_base *sh, uint32_t serial) {
-  xdg_wm_base_pong(sh, serial);
-}
-
-struct xdg_wm_base_listener xdg_shell_listener = {.ping = shell_ping};
 
 void seat_capabilities(void *data, struct wl_seat *wl_seat,
                        uint32_t capabilities) {
@@ -161,8 +140,9 @@ void register_global(void *data, struct wl_registry *registry, uint32_t name,
   } else if (strcmp(interface, wl_shm_interface.name) == 0) {
     shm = wl_registry_bind(registry, name, &wl_shm_interface, 1);
   } else if (strcmp(interface, xdg_wm_base_interface.name) == 0) {
-    xdg_shell = wl_registry_bind(registry, name, &xdg_wm_base_interface, 1);
-    xdg_wm_base_add_listener(xdg_shell, &xdg_shell_listener, 0);
+    // TODO: Check if this can be moved and if it is worth the trouble
+    xdg_base = wl_registry_bind(registry, name, &xdg_wm_base_interface, 1);
+    xdg_wm_base_add_listener(xdg_base, &xdg_shell_listener, 0);
   } else if (strcmp(interface, wl_seat_interface.name) == 0) {
     seat = wl_registry_bind(registry, name, &wl_seat_interface, 1);
     wl_seat_add_listener(seat, &seat_listener, 0);
@@ -197,13 +177,7 @@ void orti_open_window() {
   struct wl_callback *callback = wl_surface_frame(surface);
   wl_callback_add_listener(callback, &cb_listener, 0);
 
-  struct xdg_surface *x_surface =
-      xdg_wm_base_get_xdg_surface(xdg_shell, surface);
-  xdg_surface_add_listener(x_surface, &x_listener, 0);
-
-  xdg_top_level = xdg_surface_get_toplevel(x_surface);
-  xdg_toplevel_add_listener(xdg_top_level, &toplevel_listener, 0);
-  xdg_toplevel_set_title(xdg_top_level, "some weird title");
+  xdg_setup(surface, "My White Screen");
   wl_surface_commit(surface);
 
   while (wl_display_dispatch((display))) {
@@ -215,8 +189,8 @@ void orti_open_window() {
   if (buffer) {
     wl_buffer_destroy(buffer);
   }
-  xdg_toplevel_destroy(xdg_top_level);
-  xdg_surface_destroy(x_surface);
+
+  xdg_destroy();
   wl_surface_destroy(surface);
   wl_display_disconnect(display);
 }
