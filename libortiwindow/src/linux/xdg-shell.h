@@ -4,17 +4,8 @@
 #include "./xdg-shell-protocol.h"
 #include <stdint.h>
 
-void handle_surface_configuration(void *data, struct xdg_surface *surface,
-                                  uint32_t serial);
-
-void handle_toplevel_config(void *data, struct xdg_toplevel *toplevel,
-                            int32_t new_width, int32_t new_height,
-                            struct wl_array *states);
-
-void handle_toplevel_close(void *data, struct xdg_toplevel *top_level);
-
-void handle_shell_ping(void *data, struct xdg_wm_base *sh, uint32_t serial);
-void xdg_setup(struct wl_surface *wayland_surface, const char *window_name);
+void xdg_setup(struct orti_bitmap *bitmap, struct wl_surface *wayland_surface,
+               const char *window_name);
 void xdg_destroy();
 
 // Shared global variables

@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// TODO: This should be rewrite this stuff, keep in mind MAP_SHARED memory and
+// go the functional route to return the "modified" arena in all cases
+
 #define ORTI_BUCKET_SIZE_MB 2048
 #define ORTI_BYTES_IN_MB 1048576
 
@@ -41,7 +44,7 @@ Arena *new_arena() {
  */
 void arena_release(Arena **arena) {
   virtual_free(&arena, (*arena)->total_size);
-  (*arena) = NULL;
+  *arena = NULL;
 }
 
 /**

@@ -12,7 +12,7 @@ TARGET=ortiwindow
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
     SO_EXT = so
-    LDFLAGS = -shared -Wl,-soname,lib$(TARGET).$(SO_EXT) -lwayland-client
+    LDFLAGS = -shared -Wl,-soname,lib$(TARGET).$(SO_EXT) -lwayland-client -L/usr/lib -ldecor-0
     PATH_ENV_VAR=LD_LIBRARY_PATH=$(BUILD_DIR)
 		SRC_SPECIFIC_DIR=$(SRC_DIR)/linux
 		C_FILES=$(wildcard $(SRC_SPECIFIC_DIR)/*.c) $(SRC_DIR)/lib$(TARGET).c

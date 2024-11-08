@@ -12,7 +12,7 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
     SO_EXT = so
     LDFLAGS = -shared -Wl,-soname,lib$(TARGET).$(SO_EXT)
-    PATH_VAR_NAME=LD_LIBRARY_PATH=$(BUILD_DIR)
+		PATH_VAR_NAME=LD_LIBRARY_PATH=$(BUILD_DIR):$$LD_LIBRARY_PATH
     OS_SPECIFIC_FILES=$(filter %_linux.c, $(wildcard $(SRC_DIR)/*_linux.c))
 else ifeq ($(UNAME_S),Darwin)
     SO_EXT = dylib
