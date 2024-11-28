@@ -3,9 +3,11 @@
 //
 
 #include <stdio.h>
+#include "orwindow/orwindow.h"
 
-int main() {
-    printf("something only we know");
-
+int
+main() {
+    printf("something only we know\n");
+    or_create_window(1024, 768, "Window Name", "com.my.window.app");
     return 0;
 }
