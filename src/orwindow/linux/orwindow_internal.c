@@ -4,6 +4,14 @@
 
 #include <stdio.h>
 #include "../orwindow_internal.h"
+#include "wayland_client.h"
+
+struct InterWaylandClient wl_client;
+
+internal void
+inter_create_process(const char *process_name) {
+    printf("create process for %s", process_name);
+}
 
 struct ORBitmap
 inter_create_bitmap(uint16_t width, uint16_t height) {
@@ -21,5 +29,10 @@ inter_create_bitmap(uint16_t width, uint16_t height) {
 // The process stuff if needed will be handle here as well
 int8_t
 inter_create_window(struct ORBitmap *bitmap, const char *window_name, const char *process_name) {
+    inter_create_process(process_name);
+    // TODO: Check here if wayland or x11
+    inter_window_setup(&wl_client, bitmap);
+
     return 0;
 }
+

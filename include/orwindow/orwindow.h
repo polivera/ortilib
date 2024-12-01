@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include "orwindow_keyboard.h"
 #include "orwindow_pointer.h"
+#include "orwindow_errors.h"
 
 struct ORBitmap {
   uint16_t width;
@@ -29,9 +30,12 @@ void
 or_create_window(uint16_t width, uint16_t height, const char *window_name, const char *process_name);
 
 void
-or_start_main_loop(struct ORWindowListeners *window_listeners,
-                   struct ORKeyboardListeners *keyboard_listeners,
-                   struct ORPointerListeners *pointer_listeners);
+or_add_listeners(struct ORWindowListeners *window_listeners,
+                 struct ORKeyboardListeners *keyboard_listeners,
+                 struct ORPointerListeners *pointer_listeners);
+
+void
+or_start_main_loop();
 
 void
 or_toggle_fullscreen();

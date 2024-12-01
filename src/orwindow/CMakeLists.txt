@@ -28,6 +28,13 @@ target_include_directories(orwindow
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# Link against wayland-client and decor libraries
+target_link_libraries(orwindow
+        PRIVATE
+        wayland-client
+        decor-0
+)
+
 install(TARGETS orwindow
         EXPORT orwindow-targets
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
