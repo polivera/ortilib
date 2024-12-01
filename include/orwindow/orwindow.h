@@ -26,21 +26,21 @@ struct ORWindowListeners {
   void (*close)();
 };
 
-void
+enum ORWindowError
 or_create_window(uint16_t width, uint16_t height, const char *window_name, const char *process_name);
 
-void
+enum ORWindowError
 or_add_listeners(struct ORWindowListeners *window_listeners,
                  struct ORKeyboardListeners *keyboard_listeners,
                  struct ORPointerListeners *pointer_listeners);
 
-void
+enum ORWindowError
 or_start_main_loop();
 
-void
+enum ORWindowError
 or_toggle_fullscreen();
 
-void
+enum ORWindowError
 or_destroy_window();
 
 #endif //ORTILIB_ORWINDOW_H

@@ -6,19 +6,22 @@
 #include "orwindow/orwindow.h"
 #include "orwindow_internal.h"
 
-struct ORBitmap;
+struct ORBitmap bitmap;
 
-void
+enum ORWindowError
 or_create_window(uint16_t width, uint16_t height, const char *window_name, const char *process_name) {
-    struct ORBitmap bitmap = inter_create_bitmap(width, height);
-    inter_create_window(&bitmap, "my great window", "such.a.bad.impl");
-    // create client
-    printf("bitmap created with size %u x %u\n", bitmap.width, bitmap.height);
+    bitmap = inter_create_bitmap(width, height);
+    return inter_create_window(&bitmap, window_name, process_name);
 }
 
-void
+enum ORWindowError
 or_add_listeners(struct ORWindowListeners *window_listeners,
                  struct ORKeyboardListeners *keyboard_listeners,
                  struct ORPointerListeners *pointer_listeners) {
-
+    struct InterListeners listeners = {
+            .window_listeners = window_listeners,
+            .keyboard_listeners = keyboard_listeners,
+            .pointer_listeners = pointer_listeners,
+    };
+    return inter_add_listeners(&listeners);
 }
