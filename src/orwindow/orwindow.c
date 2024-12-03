@@ -9,7 +9,7 @@
 struct ORBitmap bitmap;
 
 enum ORWindowError
-or_create_window(uint16_t width, uint16_t height, const char *window_name, const char *process_name) {
+or_create_window(const uint16_t width, const uint16_t height, const char *window_name, const char *process_name) {
     bitmap = inter_create_bitmap(width, height);
     return inter_create_window(&bitmap, window_name, process_name);
 }
@@ -19,9 +19,19 @@ or_add_listeners(struct ORWindowListeners *window_listeners,
                  struct ORKeyboardListeners *keyboard_listeners,
                  struct ORPointerListeners *pointer_listeners) {
     struct InterListeners listeners = {
-            .window_listeners = window_listeners,
-            .keyboard_listeners = keyboard_listeners,
-            .pointer_listeners = pointer_listeners,
+        .window_listeners = window_listeners,
+        .keyboard_listeners = keyboard_listeners,
+        .pointer_listeners = pointer_listeners,
     };
     return inter_add_listeners(&listeners);
+}
+
+enum ORWindowError
+or_start_main_loop() {
+    return inter_start_drawing();
+}
+
+void
+or_destroy_window() {
+    return inter_remove_window();
 }

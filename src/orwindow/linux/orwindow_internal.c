@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "../orwindow_internal.h"
 #include "wayland_client.h"
+#include "wayland_decorator.h"
 
 struct InterWaylandClient wl_client;
 
@@ -38,5 +39,18 @@ enum ORWindowError
 inter_add_listeners(struct InterListeners *listeners) {
     // TODO: Check here if wayland or X11
     return inter_wl_set_listeners(&wl_client, listeners);
+}
+
+enum ORWindowError
+inter_start_drawing() {
+    // TODO: Check here if wayland or X11
+    return inter_wl_start_drawing(&wl_client);
+}
+
+void
+inter_remove_window() {
+    // TODO: Check if wayland or X11
+    inter_wl_destroy_libdecor(&wl_client);
+    inter_wl_free_window(&wl_client);
 }
 

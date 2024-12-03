@@ -8,6 +8,7 @@
 enum ORWindowError {
     // Global
     OR_NO_ERROR = 0,
+    OR_DISPLAY_CLIENT_INIT_FAILED,
     OR_DISPLAY_INIT_ERROR,
     // Wayland
     OR_WAYLAND_SURFACE_INIT_ERROR,

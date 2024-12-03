@@ -25,12 +25,12 @@ enum ORWindowError
 inter_add_listeners(struct InterListeners *listeners);
 
 enum ORWindowError
-inter_start_drawing(struct ORBitmap *bitmap);
+inter_start_drawing();
 
 enum ORWindowError
 inter_toggle_fullscreen();
 
-enum ORWindowError
+void
 inter_remove_window();
 
 #endif //ORTILIB_ORWINDOW_INTERNAL_H

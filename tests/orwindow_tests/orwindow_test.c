@@ -7,8 +7,9 @@
 
 int
 main() {
-    printf("something only we know\n");
+    printf("Starting window test from the main test file\n");
     or_create_window(1024, 768, "Window Name", "com.my.window.app");
-    or_add_listeners(NULL, NULL,NULL);
+    or_add_listeners(NULL, NULL, NULL);
+    or_start_main_loop();
     return 0;
 }

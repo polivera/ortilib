@@ -7,7 +7,6 @@
 
 #include <wayland-client-protocol.h>
 #include <libdecor-0/libdecor.h>
-#include <stdbool.h>
 #include "wayland_client.h"
 
 struct InterWayland {
@@ -22,13 +21,11 @@ struct InterWayland {
     struct wl_pointer *pointer;
 };
 
-
-
 struct InterWaylandClient {
-  struct ORBitmap *bitmap;
-  struct InterWayland *wayland;
-  struct InterDecoration *libdecor;
-  struct InterListeners *listeners;
+    struct ORBitmap *bitmap;
+    struct InterWayland *wayland;
+    struct InterDecoration *libdecor;
+    struct InterListeners *listeners;
 };
 
 enum ORWindowError
@@ -36,5 +33,11 @@ inter_wl_window_setup(struct InterWaylandClient *wlclient, struct ORBitmap *bitm
 
 enum ORWindowError
 inter_wl_set_listeners(struct InterWaylandClient *wlclient, struct InterListeners *listeners);
+
+void
+inter_wl_free_window(struct InterWaylandClient *wlclient);
+
+enum ORWindowError
+inter_wl_start_drawing(const struct InterWaylandClient *wlclient);
 
 #endif //ORTILIB_SRC_ORWINDOW_LINUX_WAYLAND_CLIENT_H

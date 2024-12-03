@@ -11,19 +11,19 @@
 #include "orwindow_errors.h"
 
 struct ORBitmap {
-  uint16_t width;
-  uint16_t height;
-  uint32_t mem_size;
-  uint16_t stride;
-  uint8_t *mem;
+    uint16_t width;
+    uint16_t height;
+    uint32_t mem_size;
+    uint16_t stride;
+    uint8_t *mem;
 };
 
 struct ORWindowListeners {
-  void (*draw)(struct ORBitmap bitmap);
-  void (*enter)();
-  void (*leave)();
-  void (*fullscreen)();
-  void (*close)();
+    void (*draw)(struct ORBitmap bitmap);
+    void (*enter)();
+    void (*leave)();
+    void (*fullscreen)();
+    void (*close)();
 };
 
 enum ORWindowError
@@ -40,7 +40,7 @@ or_start_main_loop();
 enum ORWindowError
 or_toggle_fullscreen();
 
-enum ORWindowError
+void
 or_destroy_window();
 
 #endif //ORTILIB_ORWINDOW_H

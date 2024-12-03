@@ -12,13 +12,15 @@
  * The code here is the one that actually add the border to the window
  */
 static void commit_frame(struct libdecor_frame *frame,
-                         struct libdecor_configuration *configuration, void *data) {
+                         struct libdecor_configuration *configuration,
+                         void *data) {
     printf("committing frame\n");
 }
 
 static void decoration_config(struct libdecor_frame *frame,
                               struct libdecor_configuration *configuration,
                               void *data) {
+    // TODO: Right here
     printf("deco config\n");
 }
 
@@ -31,11 +33,10 @@ static void decoration_close(struct libdecor_frame *frame, void *data) {
 }
 
 static struct libdecor_frame_interface frame_events = {
-        .configure = decoration_config,
-        .commit = decoration_commit,
-        .close = decoration_close,
+    .configure = decoration_config,
+    .commit = decoration_commit,
+    .close = decoration_close,
 };
-
 
 /**
  * Initialize libdecor
@@ -44,6 +45,8 @@ static struct libdecor_frame_interface frame_events = {
  * @return ORWindowError
  */
 enum ORWindowError init_libdecor(struct InterWaylandClient *wlclient, const char *window_name) {
+    wlclient->libdecor->is_fullscreen = false;
+    wlclient->libdecor->is_open = false;
     wlclient->libdecor = malloc(sizeof(struct InterDecoration));
     wlclient->libdecor->name = window_name;
     wlclient->libdecor->base = libdecor_new(wlclient->wayland->display, NULL);
@@ -51,7 +54,6 @@ enum ORWindowError init_libdecor(struct InterWaylandClient *wlclient, const char
         fprintf(stderr, "Cannot initialize libdecor base\n");
         return OR_LIBDECOR_INIT_ERROR;
     }
-
     wlclient->libdecor->frame = libdecor_decorate(wlclient->libdecor->base,
                                                   wlclient->wayland->surface,
                                                   &frame_events,
@@ -61,29 +63,30 @@ enum ORWindowError init_libdecor(struct InterWaylandClient *wlclient, const char
         return OR_LIBDECOR_FRAME_ERROR;
     }
 
-
-    libdecor_frame_ref(wlclient->libdecor->frame);
-    libdecor_frame_set_title(wlclient->libdecor->frame, wlclient->libdecor->name);
-    libdecor_frame_map(wlclient->libdecor->frame); // TODO: This throws an error, why is not initializing?
     return OR_NO_ERROR;
 }
 
-enum ORWindowError clear_libdecor(struct InterWaylandClient *wlclient) {
-    if (!wlclient || !wlclient->libdecor) {
-        return OR_LIBDECOR_ERROR_CLEANING;
-    }
-    if (wlclient->libdecor->frame) {
-        libdecor_frame_close(wlclient->libdecor->frame);
-        libdecor_frame_unref(wlclient->libdecor->frame);
-        wlclient->libdecor->frame = NULL;
-    }
-    if (wlclient->libdecor->base) {
-        libdecor_unref(wlclient->libdecor->base);
-        wlclient->libdecor->base = NULL;
-    }
+void inter_wl_start_decoration(const struct InterWaylandClient *wlclient) {
+    libdecor_frame_ref(wlclient->libdecor->frame);
+    libdecor_frame_set_title(wlclient->libdecor->frame, wlclient->libdecor->name);
+    libdecor_frame_map(wlclient->libdecor->frame);
+    wlclient->libdecor->is_open = true;
+}
 
-    // TODO: Arenas here.
-    free(wlclient->libdecor);
-    wlclient->libdecor = NULL;
-    return OR_NO_ERROR;
+void inter_wl_destroy_libdecor(struct InterWaylandClient *wlclient) {
+    if (wlclient) {
+        if (wlclient->libdecor->frame) {
+            libdecor_frame_close(wlclient->libdecor->frame);
+            libdecor_frame_unref(wlclient->libdecor->frame);
+            wlclient->libdecor->frame = NULL;
+        }
+        if (wlclient->libdecor->base) {
+            libdecor_unref(wlclient->libdecor->base);
+            wlclient->libdecor->base = NULL;
+        }
+
+        // TODO: Arenas here.
+        free(wlclient->libdecor);
+        wlclient->libdecor = NULL;
+    }
 }
