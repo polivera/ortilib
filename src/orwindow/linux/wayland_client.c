@@ -6,12 +6,16 @@
 #include <stdio.h>
 #include "orwindow/orwindow_errors.h"
 #include "wayland_client.h"
-
 #include <string.h>
-
 #include "wayland_decorator.h"
+#include <sys/mman.h> // shm_open
+#include <fcntl.h> // shm_open flags
+#include <unistd.h> // ftruncate
+
+#include "orwindow/orwindow.h"
 
 #define WAYLAND_ENV_VAR "WAYLAND_DISPLAY"
+#define FILE_DESCRIPTOR_NAME "/or-shared-mem"
 
 static void
 register_device(void *data,
@@ -23,19 +27,54 @@ register_device(void *data,
     if (strcmp(interface, wl_compositor_interface.name) == 0) {
         wl->compositor =
             wl_registry_bind(registry, name, &wl_compositor_interface, version);
+    } else if (strcmp(interface, wl_shm_interface.name) == 0) {
+        wl->shared_memory =
+            wl_registry_bind(registry, name, &wl_shm_interface, version);
     }
 }
 
+static void unregister_device(void *data,
+                              struct wl_registry *registry,
+                              uint32_t name) {
+    printf("Something has been unplugged?\n");
+}
+
 struct wl_registry_listener registry_listener = {
-    .global = register_device
+    .global = register_device,
+    .global_remove = unregister_device,
 };
+
+void
+inter_frame_render(struct InterWaylandClient *wlclient) {
+    // draw(*wlorti->bitmap);
+    memset(wlclient->bitmap->mem, 250, wlclient->bitmap->mem_size);
+    // Mem
+    wl_surface_attach(wlclient->wayland->surface, wlclient->wayland->buffer, 0, 0);
+    wl_surface_damage_buffer(wlclient->wayland->surface,
+                             0,
+                             0,
+                             wlclient->bitmap->width,
+                             wlclient->bitmap->height);
+    wl_surface_commit(wlclient->wayland->surface);
+}
+
+struct wl_callback_listener callback_listener;
+void wl_frame_new(void *data, struct wl_callback *cb, uint32_t cb_data) {
+    struct InterWaylandClient *wlclient = data;
+    wl_callback_destroy(cb);
+    cb = wl_surface_frame(wlclient->wayland->surface);
+    wl_callback_add_listener(cb, &callback_listener, wlclient);
+    inter_frame_render(wlclient);
+}
+struct wl_callback_listener callback_listener = {.done = wl_frame_new};
 
 /**
  * Initialize wayland related variables
  * @param wlclient
  * @return ORWindowError
  */
-static enum ORWindowError init_wayland(struct InterWaylandClient *wlclient) {
+static enum ORWindowError
+init_wayland(struct InterWaylandClient *wlclient) {
     wlclient->wayland->buffer = NULL;
     wlclient->wayland->display = wl_display_connect(getenv(WAYLAND_ENV_VAR));
     if (!wlclient->wayland->display) {
@@ -63,27 +102,92 @@ static enum ORWindowError init_wayland(struct InterWaylandClient *wlclient) {
     return OR_NO_ERROR;
 }
 
+/**
+ * Create a wayland client struct
+ * @return Wayland client struct
+ */
+struct InterWaylandClient
+inter_get_wayland_client() {
+    // TODO: Maybe use arenas here?
+    struct InterWaylandClient client = {0};
+    client.wayland = malloc(sizeof(struct InterWayland));
+    if (client.wayland == NULL) {
+        return client;
+    }
+    client.libdecor = malloc(sizeof(struct InterDecoration));
+    if (client.libdecor == NULL) {
+        free(client.wayland);
+        return client;
+    }
+    return client;
+}
+
+enum ORWindowError
+inter_wl_window_resize(struct InterWaylandClient *wlclient) {
+    printf("calling window resize with size %d x %d and mem: %d\n",
+           wlclient->bitmap->width,
+           wlclient->bitmap->height,
+           wlclient->bitmap->mem_size);
+    const int32_t file_descriptor = shm_open(FILE_DESCRIPTOR_NAME,
+                                             O_RDWR | O_CREAT | O_EXCL,
+                                             S_IWUSR | S_IRUSR | S_IWOTH | S_IROTH);
+    shm_unlink(FILE_DESCRIPTOR_NAME);
+    ftruncate(file_descriptor, wlclient->bitmap->mem_size);
+    wlclient->bitmap->mem = mmap(0,
+                                 wlclient->bitmap->mem_size,
+                                 PROT_READ | PROT_WRITE,
+                                 MAP_SHARED,
+                                 file_descriptor,
+                                 0);
+    if (wlclient->bitmap->mem == NULL) {
+        fprintf(stderr, "Failed to mmap bitmap\n");
+        return OR_WAYLAND_FAILED_WINDOW_SIZING;
+    }
+    struct wl_shm_pool *pool = wl_shm_create_pool(
+        wlclient->wayland->shared_memory,
+        file_descriptor,
+        wlclient->bitmap->mem_size);
+    if (pool == NULL) {
+        fprintf(stderr, "Failed to create shared memory pool\n");
+        return OR_WAYLAND_FAILED_WINDOW_SIZING;
+    }
+    if (wlclient->wayland->buffer != NULL) {
+        wl_buffer_destroy(wlclient->wayland->buffer);
+        wlclient->wayland->buffer = NULL;
+    }
+    wlclient->wayland->buffer =
+        wl_shm_pool_create_buffer(pool,
+                                  0,
+                                  wlclient->bitmap->width,
+                                  wlclient->bitmap->height,
+                                  wlclient->bitmap->stride,
+                                  WL_SHM_FORMAT_ARGB8888);
+    if (wlclient->wayland->buffer == NULL) {
+        fprintf(stderr, "Failed to create shared memory buffer\n");
+        return OR_WAYLAND_FAILED_WINDOW_SIZING;
+    }
+    wl_shm_pool_destroy(pool);
+    close(file_descriptor);
+    return OR_NO_ERROR;
+}
+
+/**
+ * Setup wayland window client
+ * @param wlclient wayland client
+ * @param bitmap bitmap
+ * @param window_name name of the window
+ * @return ORWindowError
+ */
 enum ORWindowError
 inter_wl_window_setup(struct InterWaylandClient *wlclient, struct ORBitmap *bitmap, const char *window_name) {
     if (wlclient == NULL) {
         return OR_DISPLAY_INIT_ERROR;
     }
     wlclient->bitmap = bitmap;
-    // TODO: Arena here
-    wlclient->wayland = malloc(sizeof(struct InterWayland));
-    if (wlclient->wayland == NULL) {
-        inter_wl_free_window(wlclient);
-        return OR_DISPLAY_CLIENT_INIT_FAILED;
-    }
-    enum ORWindowError error = init_wayland(wlclient);
+    const enum ORWindowError error = init_wayland(wlclient);
     if (error != OR_NO_ERROR) {
+        inter_wl_free_window(wlclient);
         return error;
-    }
-    // TODO: Arena here
-    wlclient->libdecor = malloc(sizeof(struct InterDecoration));
-    if (wlclient->libdecor == NULL) {
-        inter_wl_destroy_libdecor(wlclient);
-        return OR_DISPLAY_CLIENT_INIT_FAILED;
     }
     return init_libdecor(wlclient, window_name);
 }
@@ -100,11 +204,10 @@ inter_wl_set_listeners(struct InterWaylandClient *wlclient, struct InterListener
 }
 
 enum ORWindowError
-inter_wl_start_drawing(const struct InterWaylandClient *wlclient) {
+inter_wl_start_drawing(struct InterWaylandClient *wlclient) {
     if (wlclient == NULL) {
         return OR_DISPLAY_INIT_ERROR;
     }
-
     inter_wl_start_decoration(wlclient);
     while (wlclient->libdecor->is_open) {
         if (wl_display_dispatch(wlclient->wayland->display) < 0) {
@@ -112,7 +215,6 @@ inter_wl_start_drawing(const struct InterWaylandClient *wlclient) {
             break;
         }
     }
-
     return OR_NO_ERROR;
 }
 
@@ -123,12 +225,10 @@ inter_wl_free_window(struct InterWaylandClient *wlclient) {
             wl_buffer_destroy(wlclient->wayland->buffer);
             wlclient->wayland->buffer = NULL;
         }
-
         if (wlclient->wayland->surface) {
             wl_surface_destroy(wlclient->wayland->surface);
             wlclient->wayland->surface = NULL;
         }
-
         if (wlclient->wayland->display) {
             wl_display_disconnect(wlclient->wayland->display);
             wlclient->wayland->display = NULL;
@@ -136,5 +236,3 @@ inter_wl_free_window(struct InterWaylandClient *wlclient) {
         wlclient->wayland = NULL;
     }
 }
-
-

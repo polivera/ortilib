@@ -28,6 +28,15 @@ struct InterWaylandClient {
     struct InterListeners *listeners;
 };
 
+struct InterWaylandClient
+inter_get_wayland_client();
+
+void
+inter_frame_render(struct InterWaylandClient *wlclient);
+
+enum ORWindowError
+inter_wl_window_resize(struct InterWaylandClient *wlclient);
+
 enum ORWindowError
 inter_wl_window_setup(struct InterWaylandClient *wlclient, struct ORBitmap *bitmap, const char *window_name);
 
@@ -38,6 +47,6 @@ void
 inter_wl_free_window(struct InterWaylandClient *wlclient);
 
 enum ORWindowError
-inter_wl_start_drawing(const struct InterWaylandClient *wlclient);
+inter_wl_start_drawing(struct InterWaylandClient *wlclient);
 
 #endif //ORTILIB_SRC_ORWINDOW_LINUX_WAYLAND_CLIENT_H

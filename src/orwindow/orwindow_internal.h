@@ -7,16 +7,11 @@
 
 #include "orwindow/orwindow.h"
 
-#define internal static
-
 struct InterListeners {
   struct ORWindowListeners *window_listeners;
   struct ORKeyboardListeners *keyboard_listeners;
   struct ORPointerListeners *pointer_listeners;
 };
-
-struct ORBitmap
-inter_create_bitmap(uint16_t width, uint16_t height);
 
 enum ORWindowError
 inter_create_window(struct ORBitmap *bitmap, const char *window_name, const char *process_name);

@@ -13,7 +13,7 @@
 struct ORBitmap {
     uint16_t width;
     uint16_t height;
-    uint32_t mem_size;
+    int32_t mem_size;
     uint16_t stride;
     uint8_t *mem;
 };
@@ -25,6 +25,12 @@ struct ORWindowListeners {
     void (*fullscreen)();
     void (*close)();
 };
+
+struct ORBitmap
+or_bitmap_create(uint16_t width, uint16_t height);
+
+void
+or_bitmap_reset(struct ORBitmap *bitmap, uint16_t width, uint16_t height);
 
 enum ORWindowError
 or_create_window(uint16_t width, uint16_t height, const char *window_name, const char *process_name);

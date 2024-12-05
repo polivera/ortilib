@@ -8,9 +8,28 @@
 
 struct ORBitmap bitmap;
 
+struct ORBitmap
+or_bitmap_create(const uint16_t width, const uint16_t height) {
+    struct ORBitmap bitmap = {
+        .width = width,
+        .height = height,
+    };
+    or_bitmap_reset(&bitmap, width, height);
+    return bitmap;
+}
+
+void
+or_bitmap_reset(struct ORBitmap *bitmap, const uint16_t width, const uint16_t height) {
+    bitmap->mem = NULL;
+    bitmap->width = width;
+    bitmap->height = height;
+    bitmap->mem_size = width * height * 4;
+    bitmap->stride = width * 4;
+}
+
 enum ORWindowError
 or_create_window(const uint16_t width, const uint16_t height, const char *window_name, const char *process_name) {
-    bitmap = inter_create_bitmap(width, height);
+    bitmap = or_bitmap_create(width, height);
     return inter_create_window(&bitmap, window_name, process_name);
 }
 
