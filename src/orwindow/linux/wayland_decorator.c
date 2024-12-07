@@ -35,7 +35,6 @@ static void decoration_config(struct libdecor_frame *frame,
         inter_wl_window_resize(client);
         inter_frame_render(client);
     } else if (libdecor_configuration_get_content_size(configuration, frame, &width, &height)) {
-        // something else
         const int unmap_res = munmap(client->bitmap->mem, client->bitmap->mem_size);
         if (unmap_res == -1) {
             fprintf(stderr, "cannot unmap bitmap memory");

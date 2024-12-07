@@ -32,10 +32,10 @@ struct InterWaylandClient
 inter_get_wayland_client();
 
 void
-inter_frame_render(struct InterWaylandClient *wlclient);
+inter_frame_render(const struct InterWaylandClient *wlclient);
 
 enum ORWindowError
-inter_wl_window_resize(struct InterWaylandClient *wlclient);
+inter_wl_window_resize(const struct InterWaylandClient *wlclient);
 
 enum ORWindowError
 inter_wl_window_setup(struct InterWaylandClient *wlclient, struct ORBitmap *bitmap, const char *window_name);
