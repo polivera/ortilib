@@ -30,7 +30,7 @@ struct ORBitmap
 or_bitmap_create(uint16_t width, uint16_t height);
 
 void
-or_bitmap_reset(struct ORBitmap *bitmap, uint16_t width, uint16_t height);
+or_bitmap_reset(struct ORBitmap *bmp, uint16_t width, uint16_t height);
 
 enum ORWindowError
 or_create_window(uint16_t width, uint16_t height, const char *window_name, const char *process_name);

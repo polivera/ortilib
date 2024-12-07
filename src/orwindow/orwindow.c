@@ -10,21 +10,21 @@ struct ORBitmap bitmap;
 
 struct ORBitmap
 or_bitmap_create(const uint16_t width, const uint16_t height) {
-    struct ORBitmap bitmap = {
+    struct ORBitmap bmp = {
         .width = width,
         .height = height,
     };
-    or_bitmap_reset(&bitmap, width, height);
-    return bitmap;
+    or_bitmap_reset(&bmp, width, height);
+    return bmp;
 }
 
 void
-or_bitmap_reset(struct ORBitmap *bitmap, const uint16_t width, const uint16_t height) {
-    bitmap->mem = NULL;
-    bitmap->width = width;
-    bitmap->height = height;
-    bitmap->mem_size = width * height * 4;
-    bitmap->stride = width * 4;
+or_bitmap_reset(struct ORBitmap *bmp, const uint16_t width, const uint16_t height) {
+    bmp->mem = NULL;
+    bmp->width = width;
+    bmp->height = height;
+    bmp->mem_size = width * height * 4;
+    bmp->stride = width * 4;
 }
 
 enum ORWindowError
