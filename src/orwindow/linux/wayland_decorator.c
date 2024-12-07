@@ -51,7 +51,7 @@ static void decoration_commit(struct libdecor_frame *frame, void *data) {
 }
 
 static void decoration_close(struct libdecor_frame *frame, void *data) {
-    struct InterWaylandClient *client = data;
+    const struct InterWaylandClient *client = data;
     client->libdecor->is_open = false;
     printf("decoration close \n");
 }
@@ -114,7 +114,6 @@ void inter_wl_start_decoration(struct InterWaylandClient *wlclient) {
 void inter_wl_destroy_libdecor(struct InterWaylandClient *wlclient) {
     if (wlclient) {
         if (wlclient->libdecor->frame) {
-            libdecor_frame_close(wlclient->libdecor->frame);
             libdecor_frame_unref(wlclient->libdecor->frame);
             wlclient->libdecor->frame = NULL;
         }

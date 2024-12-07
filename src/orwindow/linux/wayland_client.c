@@ -12,6 +12,7 @@
 #include <fcntl.h> // shm_open flags
 #include <unistd.h> // ftruncate
 
+#include "orwindow_internal.h"
 #include "orwindow/orwindow.h"
 
 #define WAYLAND_ENV_VAR "WAYLAND_DISPLAY"
@@ -27,7 +28,7 @@ register_device(void *data,
                 uint32_t version) {
     struct InterWayland *wl = data;
     if (strcmp(interface, wl_compositor_interface.name) == 0) {
-        printf("REGISTER CCOMPOSITOR\n");
+        printf("REGISTER COMPOSITOR\n");
         wl->compositor =
             wl_registry_bind(registry, name, &wl_compositor_interface, version);
     } else if (strcmp(interface, wl_shm_interface.name) == 0) {
@@ -49,12 +50,19 @@ struct wl_registry_listener registry_listener = {
     .global_remove = unregister_device,
 };
 
+static void
+inter_draw(const struct ORBitmap *bitmap, const struct ORWindowListeners *window_listeners) {
+    if (window_listeners->draw) {
+        window_listeners->draw(bitmap);
+        return;
+    }
+    memset(bitmap->mem, 250, bitmap->mem_size);
+}
+
 // Renders a frame on the Wayland client
 void
 inter_frame_render(const struct InterWaylandClient *wlclient) {
-    // draw(*wlorti->bitmap);
-    memset(wlclient->bitmap->mem, 250, wlclient->bitmap->mem_size);
-    // Mem
+    inter_draw(wlclient->bitmap, wlclient->listeners->window_listeners);
     wl_surface_attach(wlclient->wayland->surface, wlclient->wayland->buffer, 0, 0);
     wl_surface_damage_buffer(wlclient->wayland->surface,
                              0,

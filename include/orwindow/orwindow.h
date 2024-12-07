@@ -19,7 +19,7 @@ struct ORBitmap {
 };
 
 struct ORWindowListeners {
-    void (*draw)(struct ORBitmap bitmap);
+    void (*draw)(const struct ORBitmap *bitmap);
     void (*enter)();
     void (*leave)();
     void (*fullscreen)();
