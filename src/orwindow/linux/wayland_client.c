@@ -17,6 +17,7 @@
 
 #define WAYLAND_ENV_VAR "WAYLAND_DISPLAY"
 #define FILE_DESCRIPTOR_NAME "/or-shared-mem"
+#define SEAT_VERSION 3
 
 // Registers devices from the Wayland registry by binding interfaces.
 // This will only run at window startup.
@@ -26,14 +27,20 @@ register_device(void *data,
                 uint32_t name,
                 const char *interface,
                 uint32_t version) {
-    struct InterWayland *wl = data;
+    struct InterWaylandClient *client = data;
     if (strcmp(interface, wl_compositor_interface.name) == 0) {
         printf("REGISTER COMPOSITOR\n");
-        wl->compositor =
+        client->wayland->compositor =
             wl_registry_bind(registry, name, &wl_compositor_interface, version);
     } else if (strcmp(interface, wl_shm_interface.name) == 0) {
-        wl->shared_memory =
+        client->wayland->shared_memory =
             wl_registry_bind(registry, name, &wl_shm_interface, version);
+    } else  if (strcmp(interface, wl_seat_interface.name) == 0) {
+        client->wayland->seat =
+                wl_registry_bind(registry, name, &wl_seat_interface, SEAT_VERSION);
+        if (client->listeners && client->listeners->keyboard_listeners) {
+            printf("I have keyboard listeners\n");
+        }
     }
 }
 
@@ -50,7 +57,7 @@ struct wl_registry_listener registry_listener = {
     .global_remove = unregister_device,
 };
 
-static void
+void
 inter_draw(const struct ORBitmap *bitmap, const struct ORWindowListeners *window_listeners) {
     if (window_listeners->draw) {
         window_listeners->draw(bitmap);
@@ -103,7 +110,7 @@ init_wayland(struct InterWaylandClient *wlclient) {
         fprintf(stderr, "Cannot initialize display registry\n");
         return OR_WAYLAND_SURFACE_INIT_ERROR;
     }
-    wl_registry_add_listener(wlclient->wayland->registry, &registry_listener, wlclient->wayland);
+    wl_registry_add_listener(wlclient->wayland->registry, &registry_listener, wlclient);
     // This trigger the registration process.
     wl_display_roundtrip(wlclient->wayland->display);
 
@@ -211,7 +218,7 @@ inter_wl_start_drawing(struct InterWaylandClient *wlclient) {
     if (wlclient == NULL) {
         return OR_DISPLAY_INIT_ERROR;
     }
-    inter_wl_start_decoration(wlclient);
+    inter_wl_start_decoration(wlclient->libdecor);
     while (wlclient->libdecor->is_open) {
         if (wl_display_dispatch(wlclient->wayland->display) < 0) {
             perror("wl_display_dispatch error\n");

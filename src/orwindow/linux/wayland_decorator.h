@@ -18,7 +18,7 @@ struct InterDecoration {
 
 enum ORWindowError init_libdecor(struct InterWaylandClient *wlclient, const char *window_name);
 
-void inter_wl_start_decoration(struct InterWaylandClient *wlclient);
+void inter_wl_start_decoration(struct InterDecoration *wlibdecor);
 
 void inter_wl_destroy_libdecor(struct InterWaylandClient *wlclient);
 #endif //ORTILIB_SRC_ORWINDOW_LINUX_WAYLAND_DECORATOR_H

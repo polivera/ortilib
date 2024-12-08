@@ -7,6 +7,7 @@
 #include "orwindow_internal.h"
 
 struct ORBitmap bitmap;
+struct InterListeners listeners;
 
 struct ORBitmap
 or_bitmap_create(const uint16_t width, const uint16_t height) {
@@ -37,11 +38,9 @@ enum ORWindowError
 or_add_listeners(struct ORWindowListeners *window_listeners,
                  struct ORKeyboardListeners *keyboard_listeners,
                  struct ORPointerListeners *pointer_listeners) {
-    struct InterListeners listeners = {
-        .window_listeners = window_listeners,
-        .keyboard_listeners = keyboard_listeners,
-        .pointer_listeners = pointer_listeners,
-    };
+    listeners.window_listeners = window_listeners;
+    listeners.keyboard_listeners = keyboard_listeners;
+    listeners.pointer_listeners = pointer_listeners;
     return inter_add_listeners(&listeners);
 }
 

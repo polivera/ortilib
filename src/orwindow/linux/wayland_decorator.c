@@ -100,11 +100,11 @@ enum ORWindowError init_libdecor(struct InterWaylandClient *wlclient, const char
  * Start window decoration.
  * @param wlclient InterWaylandClient
  */
-void inter_wl_start_decoration(struct InterWaylandClient *wlclient) {
-    libdecor_frame_ref(wlclient->libdecor->frame);
-    libdecor_frame_set_title(wlclient->libdecor->frame, wlclient->libdecor->name);
-    libdecor_frame_map(wlclient->libdecor->frame);
-    wlclient->libdecor->is_open = true;
+void inter_wl_start_decoration(struct InterDecoration *wlibdecor) {
+    libdecor_frame_ref(wlibdecor->frame);
+    libdecor_frame_set_title(wlibdecor->frame, wlibdecor->name);
+    libdecor_frame_map(wlibdecor->frame);
+    wlibdecor->is_open = true;
 }
 
 /**
