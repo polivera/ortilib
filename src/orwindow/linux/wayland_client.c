@@ -35,9 +35,9 @@ register_device(void *data,
     } else if (strcmp(interface, wl_shm_interface.name) == 0) {
         client->wayland->shared_memory =
             wl_registry_bind(registry, name, &wl_shm_interface, version);
-    } else  if (strcmp(interface, wl_seat_interface.name) == 0) {
+    } else if (strcmp(interface, wl_seat_interface.name) == 0) {
         client->wayland->seat =
-                wl_registry_bind(registry, name, &wl_seat_interface, SEAT_VERSION);
+            wl_registry_bind(registry, name, &wl_seat_interface, SEAT_VERSION);
         if (client->listeners && client->listeners->keyboard_listeners) {
             printf("I have keyboard listeners\n");
         }
@@ -123,7 +123,7 @@ init_wayland(struct InterWaylandClient *wlclient) {
 
 // Create a wayland client struct
 struct InterWaylandClient
-inter_get_wayland_client() {
+inter_get_wayland_client(const char *window_name) {
     // TODO: Maybe use arenas here?
     struct InterWaylandClient client = {0};
     client.wayland = malloc(sizeof(struct InterWayland));
@@ -135,6 +135,7 @@ inter_get_wayland_client() {
         free(client.wayland);
         return client;
     }
+    // client.libdecor->name = window_name;
     return client;
 }
 
@@ -186,31 +187,17 @@ inter_wl_window_resize(const struct InterWaylandClient *wlclient) {
 
 // Setup wayland window client
 enum ORWindowError
-inter_wl_window_setup(struct InterWaylandClient *wlclient, struct ORBitmap *bitmap, const char *window_name) {
+inter_wl_window_setup(struct ORBitmap *bmp, struct InterWaylandClient *wlclient) {
     if (wlclient == NULL) {
         return OR_DISPLAY_INIT_ERROR;
     }
-    wlclient->bitmap = bitmap;
+    wlclient->bitmap = bmp;
     const enum ORWindowError error = init_wayland(wlclient);
     if (error != OR_NO_ERROR) {
         inter_wl_free_window(wlclient);
         return error;
     }
-    return init_libdecor(wlclient, window_name);
-}
-
-// Set listeners to the wayland client struct
-// TODO: This may not work due to the round-trip being done only once. Maybe I have to register events earlier.
-enum ORWindowError
-inter_wl_set_listeners(struct InterWaylandClient *wlclient, struct InterListeners *listeners) {
-    if (!wlclient->wayland->display) {
-        fprintf(stderr, "window client is not initialize");
-        return OR_DISPLAY_INIT_ERROR;
-    }
-    wlclient->listeners = listeners;
-    // Trigger a new display round-trip  to register devices that has listeners
-    wl_display_roundtrip(wlclient->wayland->display);
-    return OR_NO_ERROR;
+    return init_libdecor(wlclient);
 }
 
 enum ORWindowError

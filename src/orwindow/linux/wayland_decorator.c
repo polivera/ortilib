@@ -71,7 +71,7 @@ static struct libdecor_frame_interface frame_events = {
  * @param window_name
  * @return ORWindowError
  */
-enum ORWindowError init_libdecor(struct InterWaylandClient *wlclient, const char *window_name) {
+enum ORWindowError init_libdecor(struct InterWaylandClient *wlclient) {
     wlclient->libdecor = malloc(sizeof(struct InterDecoration));
     if (wlclient->libdecor == NULL) {
         fprintf(stderr, "malloc failed\n");
@@ -79,7 +79,6 @@ enum ORWindowError init_libdecor(struct InterWaylandClient *wlclient, const char
     }
     wlclient->libdecor->is_fullscreen = false;
     wlclient->libdecor->is_open = false;
-    wlclient->libdecor->name = window_name;
     wlclient->libdecor->base = libdecor_new(wlclient->wayland->display, NULL);
     if (!wlclient->libdecor->base) {
         fprintf(stderr, "Cannot initialize libdecor base\n");
@@ -98,13 +97,13 @@ enum ORWindowError init_libdecor(struct InterWaylandClient *wlclient, const char
 
 /**
  * Start window decoration.
- * @param wlclient InterWaylandClient
+ * @param libdecor_client
  */
-void inter_wl_start_decoration(struct InterDecoration *wlibdecor) {
-    libdecor_frame_ref(wlibdecor->frame);
-    libdecor_frame_set_title(wlibdecor->frame, wlibdecor->name);
-    libdecor_frame_map(wlibdecor->frame);
-    wlibdecor->is_open = true;
+void inter_wl_start_decoration(struct InterDecoration *libdecor_client) {
+    libdecor_frame_ref(libdecor_client->frame);
+    // libdecor_frame_set_title(libdecor_client->frame, libdecor_client->name);
+    libdecor_frame_map(libdecor_client->frame);
+    libdecor_client->is_open = true;
 }
 
 /**

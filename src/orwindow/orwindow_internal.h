@@ -14,10 +14,10 @@ struct InterListeners {
 };
 
 enum ORWindowError
-inter_create_window(struct ORBitmap *bitmap, const char *window_name, const char *process_name);
+inter_create_window(const char *window_name, const char *process_name);
 
 enum ORWindowError
-inter_add_listeners(struct InterListeners *listeners);
+inter_surface_setup(struct ORBitmap *bitmap, struct InterListeners *listeners);
 
 enum ORWindowError
 inter_start_drawing();

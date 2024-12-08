@@ -31,17 +31,17 @@ or_bitmap_reset(struct ORBitmap *bmp, const uint16_t width, const uint16_t heigh
 enum ORWindowError
 or_create_window(const uint16_t width, const uint16_t height, const char *window_name, const char *process_name) {
     bitmap = or_bitmap_create(width, height);
-    return inter_create_window(&bitmap, window_name, process_name);
+    return inter_create_window(window_name, process_name);
 }
 
 enum ORWindowError
-or_add_listeners(struct ORWindowListeners *window_listeners,
+or_surface_setup(struct ORWindowListeners *window_listeners,
                  struct ORKeyboardListeners *keyboard_listeners,
                  struct ORPointerListeners *pointer_listeners) {
     listeners.window_listeners = window_listeners;
     listeners.keyboard_listeners = keyboard_listeners;
     listeners.pointer_listeners = pointer_listeners;
-    return inter_add_listeners(&listeners);
+    return inter_surface_setup(&bitmap, &listeners);
 }
 
 enum ORWindowError

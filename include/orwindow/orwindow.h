@@ -36,7 +36,7 @@ enum ORWindowError
 or_create_window(uint16_t width, uint16_t height, const char *window_name, const char *process_name);
 
 enum ORWindowError
-or_add_listeners(struct ORWindowListeners *window_listeners,
+or_surface_setup(struct ORWindowListeners *window_listeners,
                  struct ORKeyboardListeners *keyboard_listeners,
                  struct ORPointerListeners *pointer_listeners);
 

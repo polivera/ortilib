@@ -31,11 +31,19 @@ struct ORWindowListeners window_listeners = {
     .draw = draw
 };
 
+void key_press(enum ORKeys code, uint8_t os_code, uint16_t time, uint8_t mod) {
+    printf("pressing key %d, at %d\n", code, time);
+}
+
+struct ORKeyboardListeners keyboard_listeners = {
+    .key_press = key_press,
+};
+
 int
 main() {
     printf("Starting window test from the main test file\n");
     or_create_window(1024, 768, "Window Name", "com.my.window.app");
-    or_add_listeners(&window_listeners, NULL, NULL);
+    or_surface_setup(&window_listeners, &keyboard_listeners, NULL);
     or_start_main_loop();
     or_destroy_window();
     return 0;

@@ -18,22 +18,23 @@ inter_create_process(const char *process_name) {
 // decoration will be handle inside wayland since they are tightly coupled.
 // The process stuff if needed will be handle here as well
 enum ORWindowError
-inter_create_window(struct ORBitmap *bitmap, const char *window_name, const char *process_name) {
+inter_create_window(const char *window_name, const char *process_name) {
     inter_create_process(process_name);
     // TODO: Check here if wayland or x11
-    wlclient = inter_get_wayland_client();
-    if (!wlclient.wayland || !wlclient.libdecor) {
-        fprintf(stderr, "Failed to create wayland client\n");
-        return OR_WAYLAND_CLIENT_INIT_FAILED;
-    }
-    inter_wl_window_setup(&wlclient, bitmap, window_name);
+    wlclient = inter_get_wayland_client(window_name);
+
     return OR_NO_ERROR;
 }
 
 enum ORWindowError
-inter_add_listeners(struct InterListeners *listeners) {
+inter_surface_setup(struct ORBitmap *bmp, struct InterListeners *listeners) {
     // TODO: Check here if wayland or X11
-    return inter_wl_set_listeners(&wlclient, listeners);
+    if (!wlclient.wayland || !wlclient.libdecor) {
+        fprintf(stderr, "Failed to create wayland client\n");
+        return OR_WAYLAND_CLIENT_INIT_FAILED;
+    }
+    wlclient.listeners = listeners;
+    return inter_wl_window_setup(bmp, &wlclient);
 }
 
 enum ORWindowError
