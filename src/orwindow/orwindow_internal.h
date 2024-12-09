@@ -7,17 +7,18 @@
 
 #include "orwindow/orwindow.h"
 
-struct InterListeners {
-  struct ORWindowListeners *window_listeners;
-  struct ORKeyboardListeners *keyboard_listeners;
-  struct ORPointerListeners *pointer_listeners;
+struct InterListeners
+{
+    struct ORWindowListeners* window_listeners;
+    struct ORKeyboardListeners* keyboard_listeners;
+    struct ORPointerListeners* pointer_listeners;
 };
 
 enum ORWindowError
-inter_create_window(const char *window_name, const char *process_name);
+inter_create_window(const char* window_name, const char* process_name);
 
 enum ORWindowError
-inter_surface_setup(struct ORBitmap *bitmap, struct InterListeners *listeners);
+inter_surface_setup(struct ORBitmap* bitmap, struct InterListeners* listeners);
 
 enum ORWindowError
 inter_start_drawing();
