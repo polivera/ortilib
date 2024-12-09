@@ -135,6 +135,13 @@ inter_get_wayland_client(const char *window_name) {
         free(client.wayland);
         return client;
     }
+
+    client.libdecor->name = malloc(sizeof(char) * strlen(window_name));
+    if (client.libdecor->name == NULL) {
+        client.libdecor->name = "some name";
+    } else {
+        strcpy(client.libdecor->name, window_name);
+    }
     // client.libdecor->name = window_name;
     return client;
 }

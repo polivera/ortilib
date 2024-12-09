@@ -11,7 +11,7 @@
 struct InterDecoration {
     struct libdecor *base;
     struct libdecor_frame *frame;
-    const char *name;
+    char *name;
     bool is_open;
     bool is_fullscreen;
 };
