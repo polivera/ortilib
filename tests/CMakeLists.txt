@@ -16,6 +16,7 @@ target_include_directories(orwindow_test
 # Collect test sources for orarena
 file(GLOB_RECURSE orarena_TEST_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/orarena_tests/*.c"
+        ${CMAKE_SOURCE_DIR}/src/orarena/valloc_internal.h
 )
 add_executable(orarena_test
         ${orarena_TEST_SOURCES}
