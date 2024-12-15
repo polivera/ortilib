@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include "orarena/orarena.h"
 
+#include <stdint.h>
+
 // Test cases
 void test_valid_creation()
 {
@@ -13,7 +15,7 @@ void test_valid_creation()
     struct ORArena* arena = arena_create(initial_size);
 
     assert(arena != NULL);
-    assert(arena->total_size == initial_size - sizeof(struct ORArena));
+    assert(arena->total_size == initial_size);
     assert(arena->used_size == 0);
     assert(arena->previous_size == 0);
     assert(arena->memory == (void*)((char*)arena + sizeof(struct ORArena)));
@@ -34,16 +36,9 @@ void test_zero_size()
     printf("✓ test_zero_size passed\n");
 }
 
-void test_size_too_small()
-{
-    const struct ORArena* arena = arena_create(sizeof(struct ORArena) - 1);
-    assert(arena == NULL);
-    printf("✓ test_size_too_small passed\n");
-}
-
 void test_minimum_size()
 {
-    const size_t min_size = sizeof(struct ORArena) + 1;
+    const size_t min_size = 1;
     struct ORArena* arena = arena_create(min_size);
 
     assert(arena != NULL);
@@ -56,6 +51,74 @@ void test_minimum_size()
     printf("✓ test_minimum_size passed\n");
 }
 
+void test_arena_basic_allocation()
+{
+    // Create an arena with 1024 bytes
+    struct ORArena* arena = arena_create(1024);
+    assert(arena != NULL);
+
+    // Test basic allocation
+    void* ptr1 = arena_alloc(arena, 100);
+    assert(ptr1 != NULL);
+    assert(arena->used_size >= 100);
+
+    // Test multiple allocations
+    void* ptr2 = arena_alloc(arena, 200);
+    assert(ptr2 != NULL);
+    assert(ptr2 > ptr1);
+    assert(arena->used_size >= 300);
+
+    // Test allocation failure (try to allocate more than remaining space)
+    void* ptr3 = arena_alloc(arena, 2000);
+    assert(ptr3 == NULL);
+
+    arena_destroy(arena);
+    printf("✓ Basic allocation tests passed!\n");
+}
+
+void test_arena_aligned_allocation()
+{
+    struct ORArena* arena = arena_create(1024);
+    assert(arena != NULL);
+
+    // Test aligned allocation with different alignments
+    void* ptr1 = arena_alloc_aligned(arena, 50, 8);
+    assert(ptr1 != NULL);
+    assert(((uintptr_t)ptr1 & 7) == 0); // Check 8-byte alignment
+
+    void* ptr2 = arena_alloc_aligned(arena, 50, 16);
+    assert(ptr2 != NULL);
+    assert(((uintptr_t)ptr2 & 15) == 0); // Check 16-byte alignment
+
+    // Test that aligned allocation preserves spacing
+    assert(ptr2 > ptr1);
+
+    arena_destroy(arena);
+    printf("✓ Aligned allocation tests passed!\n");
+}
+
+void test_arena_boundaries()
+{
+    // Test with a small arena to check boundary conditions
+    struct ORArena* arena = arena_create(64);
+    assert(arena != NULL);
+
+    // Test allocations near the boundary
+    const void* ptr1 = arena_alloc(arena, 32);
+    assert(ptr1 != NULL);
+
+    // This should still succeed
+    const void* ptr2 = arena_alloc(arena, 16);
+    assert(ptr2 != NULL);
+
+    // This should fail (beyond capacity)
+    void* ptr3 = arena_alloc(arena, 32);
+    assert(ptr3 == NULL);
+
+    arena_destroy(arena);
+    printf("✓ Boundary tests passed!\n");
+}
+
 // Main test runner
 int main()
 {
@@ -63,8 +126,11 @@ int main()
 
     test_valid_creation();
     test_zero_size();
-    test_size_too_small();
     test_minimum_size();
+
+    test_arena_basic_allocation();
+    test_arena_aligned_allocation();
+    test_arena_boundaries();
 
     printf("All tests passed!\n");
     return 0;
