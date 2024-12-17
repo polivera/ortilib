@@ -27,6 +27,26 @@ void test_valid_creation() {
     printf("✓ test_valid_creation passed\n");
 }
 
+// Test cases
+void test_valid_shared_creation() {
+    const size_t initial_size = 1024;
+    struct ORArena *arena = arena_create_shared(initial_size);
+
+    assert(arena != NULL);
+    assert(arena->total_size == initial_size);
+    assert(arena->used_size == 0);
+    assert(arena->previous_size == 0);
+    assert(arena->memory != NULL);
+
+    // Verify memory is accessible and writable
+    char *mem = arena->memory;
+    mem[0] = 'a'; // Should not crash
+
+    // Cleanup
+    arena_destroy(arena);
+    printf("✓ test_valid_shared_creation passed\n");
+}
+
 void test_zero_size() {
     const struct ORArena *arena = arena_create(0);
     assert(arena == NULL);
@@ -105,7 +125,7 @@ void test_arena_boundaries() {
     assert(ptr2 != NULL);
 
     // This should fail (beyond capacity)
-    void *ptr3 = arena_alloc(arena, 32);
+    const void *ptr3 = arena_alloc(arena, 32);
     assert(ptr3 == NULL);
 
     arena_destroy(arena);
@@ -128,20 +148,21 @@ void test_sub_arena_creation() {
     assert(parent_arena->used_size >= (sizeof(struct ORArena) + 256));
 
     // Test zero size sub-arena creation (should fail)
-    struct ORArena *invalid_sub_arena = sub_arena_create(parent_arena, 0);
+    const struct ORArena *invalid_sub_arena = sub_arena_create(parent_arena, 0);
     assert(invalid_sub_arena == NULL);
 
     // Test sub-arena creation when parent doesn't have enough space
-    struct ORArena *too_large_sub_arena = sub_arena_create(parent_arena, 2048);
+    const struct ORArena *too_large_sub_arena =
+        sub_arena_create(parent_arena, 2048);
     assert(too_large_sub_arena == NULL);
 
     // Test sub-arena allocation
-    void *sub_ptr = arena_alloc(sub_arena, 64);
+    const void *sub_ptr = arena_alloc(sub_arena, 64);
     assert(sub_ptr != NULL);
     assert(sub_arena->used_size >= 64);
 
     // Test sub-arena boundary
-    void *overflow_ptr = arena_alloc(sub_arena, 512);
+    const void *overflow_ptr = arena_alloc(sub_arena, 512);
     assert(overflow_ptr == NULL);
 
     // Cleanup - note that memory isn't returned to parent
@@ -161,8 +182,8 @@ void test_sub_arena_memory_isolation() {
     assert(sub_arena2 != NULL);
 
     // Allocate in each sub-arena
-    void *ptr1 = arena_alloc(sub_arena1, 64);
-    void *ptr2 = arena_alloc(sub_arena2, 64);
+    const void *ptr1 = arena_alloc(sub_arena1, 64);
+    const void *ptr2 = arena_alloc(sub_arena2, 64);
     assert(ptr1 != NULL);
     assert(ptr2 != NULL);
 
@@ -173,7 +194,7 @@ void test_sub_arena_memory_isolation() {
 
     // Test that destroying sub_arena1 doesn't affect sub_arena2
     sub_arena_destroy(sub_arena1);
-    void *ptr3 = arena_alloc(sub_arena2, 32);
+    const void *ptr3 = arena_alloc(sub_arena2, 32);
     assert(ptr3 != NULL);
     assert(ptr3 > ptr2);
 
@@ -183,12 +204,93 @@ void test_sub_arena_memory_isolation() {
     printf("✓ Sub-arena memory isolation tests passed!\n");
 }
 
+void test_arena_pop() {
+    struct ORArena *arena = arena_create(1024);
+    assert(arena != NULL);
+
+    // Allocate some memory and record the state
+    const void *ptr1 = arena_alloc(arena, 100);
+    assert(ptr1 != NULL);
+
+    // Save the current size before second allocation
+    arena->previous_size = arena->used_size;
+
+    // Allocate more memory
+    const void *ptr2 = arena_alloc(arena, 200);
+    assert(ptr2 != NULL);
+    const size_t size_before_pop = arena->used_size;
+
+    // Pop back to first allocation
+    arena_pop(arena);
+    assert(arena->used_size == arena->previous_size);
+    assert(arena->used_size < size_before_pop);
+
+    // Verify we can allocate again in the popped space
+    const void *ptr3 = arena_alloc(arena, 150);
+    assert(ptr3 != NULL);
+    assert(ptr3 >= ptr2); // Should reuse the previously popped space
+
+    arena_destroy(arena);
+    printf("✓ Arena pop tests passed!\n");
+}
+
+void test_arena_reset() {
+    struct ORArena *arena = arena_create(1024);
+    assert(arena != NULL);
+
+    // Make several allocations
+    const void *ptr1 = arena_alloc(arena, 100);
+    const void *ptr2 = arena_alloc(arena, 200);
+    const void *ptr3 = arena_alloc(arena, 300);
+    assert(ptr1 != NULL && ptr2 != NULL && ptr3 != NULL);
+
+    const size_t used_before_reset = arena->used_size;
+    assert(used_before_reset > 0);
+
+    // Reset the arena
+    arena_reset(arena);
+    assert(arena->used_size == 0);
+    assert(arena->total_size == 1024); // Total size should remain unchanged
+
+    // Verify we can allocate again
+    const void *ptr4 = arena_alloc(arena, used_before_reset);
+    assert(ptr4 != NULL);
+    assert(ptr4 == ptr1); // Should start from the beginning of the arena
+
+    arena_destroy(arena);
+    printf("✓ Arena reset tests passed!\n");
+}
+
+void test_sub_arena_pop_protection() {
+    struct ORArena *parent_arena = arena_create(1024);
+    assert(parent_arena != NULL);
+    // Record the previous size before sub-arena creation
+    parent_arena->previous_size = parent_arena->used_size;
+    // Create a sub-arena
+    struct ORArena *sub_arena = sub_arena_create(parent_arena, 256);
+    assert(sub_arena != NULL);
+    // Try to pop parent arena
+    arena_pop(parent_arena);
+    // Verify that the sub-arena memory is still intact
+    assert(parent_arena->used_size == parent_arena->previous_size);
+    // Verify sub-arena is still usable
+    void *ptr = arena_alloc(sub_arena, 64);
+    assert(ptr != NULL);
+
+    sub_arena_destroy(sub_arena);
+    arena_destroy(parent_arena);
+    printf("✓ Sub-arena pop protection tests passed!\n");
+}
+
 // Main test runner
 int main() {
     printf("Running arena creation tests...\n");
     test_valid_creation();
+    test_valid_shared_creation();
     test_zero_size();
     test_minimum_size();
+    test_arena_pop();
+    test_arena_reset();
     printf("Running arena allocation tests...\n");
     test_arena_basic_allocation();
     test_arena_aligned_allocation();
@@ -196,6 +298,7 @@ int main() {
     printf("Running sub-arena tests...\n");
     test_sub_arena_creation();
     test_sub_arena_memory_isolation();
+    test_sub_arena_pop_protection();
 
     printf("All tests passed!\n");
     return 0;
