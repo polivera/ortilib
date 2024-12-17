@@ -21,8 +21,7 @@
  * - Modifier keys (Shift, Ctrl, etc.)
  * - Navigation keys (arrows, etc.)
  */
-enum ORKeys
-{
+enum ORKeys {
     KEY_UNKNOWN = 0,
     KEY_ESC,
     KEY_F1,
@@ -131,8 +130,7 @@ enum ORKeys
  *        128 = Hyper
  *        (Values add up when multiple modifiers are pressed)
  */
-struct ORKeyboardListeners
-{
+struct ORKeyboardListeners {
     /**
      * @brief Called on keyboard listener initialization.
      */
@@ -141,13 +139,15 @@ struct ORKeyboardListeners
      * @brief Callback function for key press events
      * Called when a key is initially pressed down
      */
-    void (*key_press)(enum ORKeys code, uint8_t os_code, time_t time, uint8_t mod);
+    void (*key_press)(enum ORKeys code, uint8_t os_code, time_t time,
+                      uint8_t mod);
 
     /**
      * @brief Callback function for key release events
      * Called when a previously pressed key is released
      */
-    void (*key_release)(enum ORKeys code, uint8_t os_code, time_t time, uint8_t mod);
+    void (*key_release)(enum ORKeys code, uint8_t os_code, time_t time,
+                        uint8_t mod);
 };
 
 #endif // ORTILIB_ORWINDOW_KEYBOARD_H
