@@ -7,8 +7,7 @@
 
 #include <stdint.h>
 
-enum ORPointerButton
-{
+enum ORPointerButton {
     OR_CLICK_UNKNOWN = 0,
     OR_CLICK_LEFT,
     OR_CLICK_RIGHT,
@@ -20,14 +19,13 @@ enum ORPointerButton
 
 #define OR_ECLICK_LEN 7
 
-struct ORPointerListeners
-{
+struct ORPointerListeners {
     /**
-       * Called when the pointer enters the window area.
-       *
-       * @param point_x X coordinate of the pointer when entering.
-       * @param point_y Y coordinate of the pointer when entering.
-       */
+     * Called when the pointer enters the window area.
+     *
+     * @param point_x X coordinate of the pointer when entering.
+     * @param point_y Y coordinate of the pointer when entering.
+     */
     void (*enter)(uint16_t point_x, uint16_t point_y);
 
     /**
@@ -70,4 +68,4 @@ struct ORPointerListeners
     void (*scroll_y)(int32_t value, time_t time);
 };
 
-#endif //ORTILIB_INCLUDE_ORWINDOW_ORWINDOW_POINTER_H
+#endif // ORTILIB_INCLUDE_ORWINDOW_ORWINDOW_POINTER_H

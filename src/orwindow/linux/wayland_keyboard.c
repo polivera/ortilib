@@ -2,10 +2,10 @@
 // Created by pablo on 12/9/24.
 //
 
-#include <stdio.h>
-#include <wayland-client-protocol.h>
 #include "orwindow/orwindow.h"
 #include "wayland_client.h"
+#include <stdio.h>
+#include <wayland-client-protocol.h>
 
 struct ORKeyboardListeners keyboard_listeners;
 struct ORWindowListeners window_listeners;
@@ -13,8 +13,7 @@ struct ORWindowListeners window_listeners;
 static uint8_t active_mods = 0;
 static uint8_t key_map[255] = {KEY_UNKNOWN};
 
-static void initialize_key_map()
-{
+static void initialize_key_map() {
     key_map[1] = KEY_ESC;
     key_map[2] = KEY_1;
     key_map[3] = KEY_2;
@@ -98,75 +97,61 @@ static void initialize_key_map()
     // TODO: Finish with the rest of the keys
 }
 
-static void keyboard_keymap(void* data, struct wl_keyboard* keyboard,
-                            uint32_t format, int fd, uint32_t size)
-{
-    if (keyboard_listeners.load)
-    {
+static void keyboard_keymap(void *data, struct wl_keyboard *keyboard,
+                            uint32_t format, int fd, uint32_t size) {
+    if (keyboard_listeners.load) {
         keyboard_listeners.load();
     }
 }
 
-static void keyboard_enter(void* data, struct wl_keyboard* keyboard,
-                           uint32_t serial, struct wl_surface* surface,
-                           struct wl_array* keys)
-{
-    if (window_listeners.enter)
-    {
+static void keyboard_enter(void *data, struct wl_keyboard *keyboard,
+                           uint32_t serial, struct wl_surface *surface,
+                           struct wl_array *keys) {
+    if (window_listeners.enter) {
         window_listeners.enter();
     }
 }
 
-static void keyboard_leave(void* data, struct wl_keyboard* keyboard,
-                           uint32_t serial, struct wl_surface* surface)
-{
-    if (window_listeners.leave)
-    {
+static void keyboard_leave(void *data, struct wl_keyboard *keyboard,
+                           uint32_t serial, struct wl_surface *surface) {
+    if (window_listeners.leave) {
         window_listeners.leave();
     }
 }
 
-static void keyboard_key(void* data, struct wl_keyboard* keyboard,
+static void keyboard_key(void *data, struct wl_keyboard *keyboard,
                          uint32_t serial, uint32_t time, uint32_t key,
-                         uint32_t state)
-{
-    if (state == WL_KEYBOARD_KEY_STATE_PRESSED && keyboard_listeners.key_press)
-    {
+                         uint32_t state) {
+    if (state == WL_KEYBOARD_KEY_STATE_PRESSED &&
+        keyboard_listeners.key_press) {
         keyboard_listeners.key_press(key_map[key], key, time, active_mods);
-    }
-    else if (state == WL_KEYBOARD_KEY_STATE_RELEASED &&
-        keyboard_listeners.key_release)
-    {
+    } else if (state == WL_KEYBOARD_KEY_STATE_RELEASED &&
+               keyboard_listeners.key_release) {
         keyboard_listeners.key_release(key_map[key], key, time, active_mods);
     }
 }
 
-static void keyboard_modifiers(void* data, struct wl_keyboard* keyboard,
+static void keyboard_modifiers(void *data, struct wl_keyboard *keyboard,
                                uint32_t serial, uint32_t mods_depressed,
                                uint32_t mods_latched, uint32_t mods_locked,
-                               uint32_t group)
-{
+                               uint32_t group) {
     active_mods = mods_depressed;
 }
 
-void setup_keyboard(
-    const struct ORWindowListeners* win_listeners,
-    const struct ORKeyboardListeners* key_listeners, struct InterWayland* wayland)
-{
+void setup_keyboard(const struct ORWindowListeners *win_listeners,
+                    const struct ORKeyboardListeners *key_listeners,
+                    struct InterWayland *wayland) {
     wayland->keyboard = wl_seat_get_keyboard(wayland->seat);
-    if (!wayland->keyboard)
-    {
+    if (!wayland->keyboard) {
         fprintf(stderr, "Failed to get keyboard from seat.\n");
         return;
     }
     initialize_key_map();
 
-    if (key_listeners)
-    {
+    if (key_listeners) {
         keyboard_listeners = *key_listeners;
     }
-    if (win_listeners)
-    {
+    if (win_listeners) {
         window_listeners = *win_listeners;
     }
     static struct wl_keyboard_listener wl_listeners = {

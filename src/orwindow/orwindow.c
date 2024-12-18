@@ -2,16 +2,14 @@
 // Created by pablo on 11/27/24.
 //
 
-#include <stdio.h>
 #include "orwindow/orwindow.h"
 #include "orwindow_internal.h"
+#include <stdio.h>
 
 struct ORBitmap bitmap;
 struct InterListeners listeners;
 
-struct ORBitmap
-or_bitmap_create(const uint16_t width, const uint16_t height)
-{
+struct ORBitmap or_bitmap_create(const uint16_t width, const uint16_t height) {
     struct ORBitmap bmp = {
         .width = width,
         .height = height,
@@ -20,9 +18,8 @@ or_bitmap_create(const uint16_t width, const uint16_t height)
     return bmp;
 }
 
-void
-or_bitmap_reset(struct ORBitmap* bmp, const uint16_t width, const uint16_t height)
-{
+void or_bitmap_reset(struct ORBitmap *bmp, const uint16_t width,
+                     const uint16_t height) {
     bmp->mem = NULL;
     bmp->width = width;
     bmp->height = height;
@@ -30,38 +27,25 @@ or_bitmap_reset(struct ORBitmap* bmp, const uint16_t width, const uint16_t heigh
     bmp->stride = width * 4;
 }
 
-enum ORWindowError
-or_create_window(const uint16_t width, const uint16_t height, const char* window_name, const char* process_name)
-{
+enum ORWindowError or_create_window(const uint16_t width, const uint16_t height,
+                                    const char *window_name,
+                                    const char *process_name) {
     bitmap = or_bitmap_create(width, height);
     return inter_create_window(window_name, process_name);
 }
 
 enum ORWindowError
-or_surface_setup(struct ORWindowListeners* window_listeners,
-                 struct ORKeyboardListeners* keyboard_listeners,
-                 struct ORPointerListeners* pointer_listeners)
-{
+or_surface_setup(struct ORWindowListeners *window_listeners,
+                 struct ORKeyboardListeners *keyboard_listeners,
+                 struct ORPointerListeners *pointer_listeners) {
     listeners.window_listeners = window_listeners;
     listeners.keyboard_listeners = keyboard_listeners;
     listeners.pointer_listeners = pointer_listeners;
     return inter_surface_setup(&bitmap, &listeners);
 }
 
-enum ORWindowError
-or_start_main_loop()
-{
-    return inter_start_drawing();
-}
+enum ORWindowError or_start_main_loop() { return inter_start_drawing(); }
 
-enum ORWindowError
-or_toggle_fullscreen()
-{
-    return inter_toggle_fullscreen();
-}
+enum ORWindowError or_toggle_fullscreen() { return inter_toggle_fullscreen(); }
 
-void
-or_destroy_window()
-{
-    return inter_remove_window();
-}
+void or_destroy_window() { return inter_remove_window(); }
