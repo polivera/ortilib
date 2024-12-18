@@ -124,8 +124,6 @@ void inter_wl_destroy_libdecor(struct InterWaylandClient *wlclient) {
             libdecor_unref(wlclient->libdecor->base);
             wlclient->libdecor->base = NULL;
         }
-        // TODO: Arenas here.
-        free(wlclient->libdecor);
         wlclient->libdecor = NULL;
     }
 }

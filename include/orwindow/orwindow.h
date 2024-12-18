@@ -26,7 +26,7 @@ struct ORWindowListeners {
     void (*close)();
 };
 
-struct ORBitmap or_bitmap_create(uint16_t width, uint16_t height);
+// struct ORBitmap or_bitmap_create(uint16_t width, uint16_t height);
 
 void or_bitmap_reset(struct ORBitmap *bmp, uint16_t width, uint16_t height);
 

@@ -31,6 +31,7 @@ target_include_directories(orwindow
 # Link against wayland-client and decor libraries
 target_link_libraries(orwindow
         PRIVATE
+        orarena
         wayland-client
         decor-0
 )

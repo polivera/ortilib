@@ -53,5 +53,5 @@ dkms.conf
 
 cmake-build-debug
 build/
-!build/.gitkeep
 .cache
+build-release
