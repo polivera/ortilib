@@ -172,7 +172,6 @@ inter_wl_window_resize(const struct InterWaylandClient *wlclient) {
     shm_unlink(FILE_DESCRIPTOR_NAME);
     ftruncate(file_descriptor, wlclient->bitmap->mem_size);
 
-    // TODO: Change here to arena
     wlclient->bitmap->mem =
         mmap(0, wlclient->bitmap->mem_size, PROT_READ | PROT_WRITE,
              MAP_SHARED | MAP_NORESERVE, file_descriptor, 0);
