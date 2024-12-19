@@ -52,6 +52,8 @@ struct ORArena *arena_create_shared(const size_t initial_size) {
 }
 
 void arena_destroy(struct ORArena *arena) {
+    // TODO: Check that sub-arena are not used with destroy by checking for
+    // parent
     if (virtual_free(arena, arena->total_size) == 1) {
         fprintf(stderr, "Cannot release memory\n");
     }

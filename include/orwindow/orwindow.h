@@ -5,6 +5,7 @@
 #ifndef ORTILIB_ORWINDOW_H
 #define ORTILIB_ORWINDOW_H
 
+#include "orarena/orarena.h"
 #include "orwindow_errors.h"
 #include "orwindow_keyboard.h"
 #include "orwindow_pointer.h"
@@ -22,17 +23,17 @@ struct ORWindowListeners {
     void (*draw)(const struct ORBitmap *bitmap);
     void (*enter)();
     void (*leave)();
+    void (*resize)();
     void (*fullscreen)();
     void (*close)();
 };
-
-struct ORBitmap or_bitmap_create(uint16_t width, uint16_t height);
 
 void or_bitmap_reset(struct ORBitmap *bmp, uint16_t width, uint16_t height);
 
 enum ORWindowError or_create_window(uint16_t width, uint16_t height,
                                     const char *window_name,
-                                    const char *process_name);
+                                    const char *process_name,
+                                    struct ORArena *arena);
 
 enum ORWindowError
 or_surface_setup(struct ORWindowListeners *window_listeners,

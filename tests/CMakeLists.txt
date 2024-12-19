@@ -27,7 +27,7 @@ target_include_directories(orarena_test
 )
 
 
-target_link_libraries(orwindow_test PRIVATE orwindow)
+target_link_libraries(orwindow_test PRIVATE orwindow orarena)
 add_test(NAME orwindow_test COMMAND orwindow_test)
 
 target_link_libraries(orarena_test PRIVATE orarena)

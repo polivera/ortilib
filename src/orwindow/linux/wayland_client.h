@@ -26,9 +26,11 @@ struct InterWaylandClient {
     struct InterWayland *wayland;
     struct InterDecoration *libdecor;
     struct InterListeners *listeners;
+    struct ORArena *arena;
 };
 
-struct InterWaylandClient inter_get_wayland_client(const char *window_name);
+struct InterWaylandClient *inter_get_wayland_client(const char *window_name,
+                                                    struct ORArena *arena);
 
 void inter_frame_render(const struct InterWaylandClient *wlclient);
 

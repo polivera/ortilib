@@ -9,6 +9,7 @@
 #include <sys/mman.h> // shm_open
 #include <unistd.h>   // ftruncate
 
+#include "orarena/orarena.h"
 #include "orwindow/orwindow.h"
 #include "orwindow/orwindow_errors.h"
 #include "orwindow_internal.h"
@@ -26,7 +27,7 @@
 static void register_device(void *data, struct wl_registry *registry,
                             uint32_t name, const char *interface,
                             uint32_t version) {
-    struct InterWaylandClient *client = data;
+    const struct InterWaylandClient *client = data;
     if (strcmp(interface, wl_compositor_interface.name) == 0) {
         client->wayland->compositor =
             wl_registry_bind(registry, name, &wl_compositor_interface, version);
@@ -129,40 +130,52 @@ static enum ORWindowError init_wayland(struct InterWaylandClient *wlclient) {
 }
 
 // Create a wayland client struct
-struct InterWaylandClient inter_get_wayland_client(const char *window_name) {
-    // TODO: Maybe use arenas here?
-    struct InterWaylandClient client = {0};
-    client.wayland = malloc(sizeof(struct InterWayland));
-    if (client.wayland == NULL) {
-        return client;
+struct InterWaylandClient *inter_get_wayland_client(const char *window_name,
+                                                    struct ORArena *arena) {
+
+    struct InterWaylandClient *client =
+        arena_alloc(arena, sizeof(struct InterWaylandClient));
+    if (client == NULL) {
+        fprintf(stderr, "Failed to allocate inter wayland client\n");
+        return NULL;
     }
-    client.libdecor = malloc(sizeof(struct InterDecoration));
-    if (client.libdecor == NULL) {
-        free(client.wayland);
+
+    client->wayland = arena_alloc(arena, sizeof(struct InterWayland));
+    if (client->wayland == NULL) {
+        fprintf(stderr, "Failed to allocate inter wayland client\n");
         return client;
     }
 
-    client.libdecor->name = malloc(sizeof(char) * strlen(window_name));
-    if (client.libdecor->name == NULL) {
-        client.libdecor->name = "some name";
-    } else {
-        strcpy(client.libdecor->name, window_name);
+    client->libdecor = arena_alloc(arena, sizeof(struct InterDecoration));
+    if (client->libdecor == NULL) {
+        fprintf(stderr, "Failed to allocate inter wayland client\n");
+        return NULL;
     }
-    // client.libdecor->name = window_name;
+
+    client->libdecor->name =
+        arena_alloc(arena, sizeof(char) * strlen(window_name));
+    if (client->libdecor->name != NULL) {
+        strcpy(client->libdecor->name, window_name);
+    }
+
+    client->arena = arena;
     return client;
 }
 
 // This is called from the decorator upon window resize
 enum ORWindowError
 inter_wl_window_resize(const struct InterWaylandClient *wlclient) {
+    // Window resize event is in the decorator.
     const int32_t file_descriptor =
         shm_open(FILE_DESCRIPTOR_NAME, O_RDWR | O_CREAT | O_EXCL,
                  S_IWUSR | S_IRUSR | S_IWOTH | S_IROTH);
     shm_unlink(FILE_DESCRIPTOR_NAME);
     ftruncate(file_descriptor, wlclient->bitmap->mem_size);
+
     wlclient->bitmap->mem =
         mmap(0, wlclient->bitmap->mem_size, PROT_READ | PROT_WRITE,
              MAP_SHARED | MAP_NORESERVE, file_descriptor, 0);
+
     if (wlclient->bitmap->mem == NULL) {
         fprintf(stderr, "Failed to mmap bitmap\n");
         return OR_WAYLAND_FAILED_WINDOW_SIZING;
@@ -170,6 +183,7 @@ inter_wl_window_resize(const struct InterWaylandClient *wlclient) {
     struct wl_shm_pool *pool =
         wl_shm_create_pool(wlclient->wayland->shared_memory, file_descriptor,
                            wlclient->bitmap->mem_size);
+
     if (pool == NULL) {
         fprintf(stderr, "Failed to create shared memory pool\n");
         return OR_WAYLAND_FAILED_WINDOW_SIZING;

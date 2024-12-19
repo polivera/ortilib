@@ -5,6 +5,7 @@
 #ifndef ORTILIB_ORWINDOW_INTERNAL_H
 #define ORTILIB_ORWINDOW_INTERNAL_H
 
+#include "orarena/orarena.h"
 #include "orwindow/orwindow.h"
 
 struct InterListeners {
@@ -14,7 +15,8 @@ struct InterListeners {
 };
 
 enum ORWindowError inter_create_window(const char *window_name,
-                                       const char *process_name);
+                                       const char *process_name,
+                                       struct ORArena *arena);
 
 enum ORWindowError inter_surface_setup(struct ORBitmap *bitmap,
                                        struct InterListeners *listeners);
@@ -23,6 +25,6 @@ enum ORWindowError inter_start_drawing();
 
 enum ORWindowError inter_toggle_fullscreen();
 
-void inter_remove_window();
+void inter_remove_window(struct ORArena *arena);
 
 #endif // ORTILIB_ORWINDOW_INTERNAL_H
