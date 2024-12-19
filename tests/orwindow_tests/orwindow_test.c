@@ -2,6 +2,7 @@
 // Created by pablo on 11/27/24.
 //
 
+#include "orarena/orarena.h"
 #include "orwindow/orwindow.h"
 #include <stdio.h>
 
@@ -10,7 +11,7 @@ uint16_t y_offset = 0;
 uint8_t is_key_pressed[255] = {0};
 uint8_t is_mouse_button_pressed[OR_ECLICK_LEN] = {0};
 
-void drawLittleFrame(const struct ORBitmap *bitmap) {
+void draw_little_frame(const struct ORBitmap *bitmap) {
     uint8_t *row = bitmap->mem;
     for (uint16_t y = 0; y < bitmap->height; y++) {
         uint8_t *pixel = row;
@@ -86,10 +87,13 @@ void mouse_release(const enum ORPointerButton button, time_t time) {
 }
 
 void window_leave() { printf("Window left\n"); }
+void window_enter() { printf("Window ENTER\n"); }
 
 void window_fullscreen() { printf("Window is now fullscreen\n"); }
 
 void window_close() { printf("Window is now closed\n"); }
+
+void window_resize() { printf("Window is now resize\n"); }
 
 struct ORKeyboardListeners keyboard_listeners = {.key_press = key_press,
                                                  .key_release = key_release};
@@ -100,15 +104,20 @@ struct ORPointerListeners pointer_listeners = {
 };
 
 struct ORWindowListeners window_listeners = {
-    .draw = drawLittleFrame,
+    .draw = draw_little_frame,
     .leave = window_leave,
+    .enter = window_enter,
+    .resize = window_resize,
     .fullscreen = window_fullscreen,
     .close = window_close,
 };
 
 int main() {
     printf("Starting window test from the main test file\n");
-    or_create_window(1024, 768, "Window Name", "com.my.window.app");
+    struct ORArena *arena = arena_create_shared(500 * 1024 * 1024);
+
+    or_create_window(1024, 768, "Window Name", "com.my.window.app",
+                     sub_arena_create(arena, 50 * 1024 * 1024));
     or_surface_setup(&window_listeners, &keyboard_listeners,
                      &pointer_listeners);
     or_start_main_loop();

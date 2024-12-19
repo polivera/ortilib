@@ -3,7 +3,9 @@
 //
 
 #include "wayland_decorator.h"
+
 #include "orwindow/orwindow.h"
+#include "orwindow_internal.h"
 #include "wayland_client.h"
 #include <libdecor-0/libdecor.h>
 #include <stdio.h>
@@ -29,14 +31,19 @@ static void commit_frame(struct libdecor_frame *frame,
 static void decoration_config(struct libdecor_frame *frame,
                               struct libdecor_configuration *configuration,
                               void *data) {
-    struct InterWaylandClient *client = data;
+    const struct InterWaylandClient *client = data;
     int width = 0, height = 0;
 
     if (NULL == client->bitmap->mem) {
         inter_wl_window_resize(client);
         inter_frame_render(client);
     } else if (libdecor_configuration_get_content_size(configuration, frame,
-                                                       &width, &height)) {
+                                                       &width, &height) &&
+               (width != client->bitmap->width ||
+                height != client->bitmap->height)) {
+        if (client->listeners->window_listeners->resize != NULL) {
+            client->listeners->window_listeners->resize();
+        }
         const int unmap_res =
             munmap(client->bitmap->mem, client->bitmap->mem_size);
         if (unmap_res == -1) {

@@ -27,7 +27,7 @@
 static void register_device(void *data, struct wl_registry *registry,
                             uint32_t name, const char *interface,
                             uint32_t version) {
-    struct InterWaylandClient *client = data;
+    const struct InterWaylandClient *client = data;
     if (strcmp(interface, wl_compositor_interface.name) == 0) {
         client->wayland->compositor =
             wl_registry_bind(registry, name, &wl_compositor_interface, version);
@@ -165,6 +165,7 @@ struct InterWaylandClient *inter_get_wayland_client(const char *window_name,
 // This is called from the decorator upon window resize
 enum ORWindowError
 inter_wl_window_resize(const struct InterWaylandClient *wlclient) {
+    // Window resize event is in the decorator.
     const int32_t file_descriptor =
         shm_open(FILE_DESCRIPTOR_NAME, O_RDWR | O_CREAT | O_EXCL,
                  S_IWUSR | S_IRUSR | S_IWOTH | S_IROTH);
@@ -172,11 +173,9 @@ inter_wl_window_resize(const struct InterWaylandClient *wlclient) {
     ftruncate(file_descriptor, wlclient->bitmap->mem_size);
 
     // TODO: Change here to arena
-    // wlclient->bitmap->mem =
-    //     mmap(0, wlclient->bitmap->mem_size, PROT_READ | PROT_WRITE,
-    //          MAP_SHARED | MAP_NORESERVE, file_descriptor, 0);
     wlclient->bitmap->mem =
-        arena_alloc(wlclient->arena, wlclient->bitmap->mem_size);
+        mmap(0, wlclient->bitmap->mem_size, PROT_READ | PROT_WRITE,
+             MAP_SHARED | MAP_NORESERVE, file_descriptor, 0);
 
     if (wlclient->bitmap->mem == NULL) {
         fprintf(stderr, "Failed to mmap bitmap\n");
