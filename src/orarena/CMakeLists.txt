@@ -20,6 +20,15 @@ add_library(orarena SHARED
         ${ORARENA_SOURCES}
 )
 
+if (OR_DEBUG_MEMORY)
+    add_definitions(-DOR_DEBUG_MEMORY)
+endif ()
+
+# Set compile definitions for the library
+if (OR_DEBUG_MEMORY)
+    target_compile_definitions(orarena PUBLIC OR_DEBUG_MEMORY)
+endif ()
+
 # Specify where to find headers
 target_include_directories(orarena
         PUBLIC

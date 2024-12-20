@@ -24,7 +24,8 @@ void or_bitmap_reset(struct ORBitmap *bmp, const uint16_t width,
 enum ORWindowError or_create_window(const uint16_t width, const uint16_t height,
                                     const char *window_name,
                                     const char *process_name,
-                                    struct ORArena *arena) {
+                                    struct ORArena *extern_arena) {
+    arena = extern_arena;
     if (arena == NULL) {
         arena = arena_create_shared(100 * 1024 * 1024);
     }
