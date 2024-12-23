@@ -12,6 +12,7 @@ struct InterListeners {
     struct ORWindowListeners *window_listeners;
     struct ORKeyboardListeners *keyboard_listeners;
     struct ORPointerListeners *pointer_listeners;
+    struct ORGamepadListeners *gamepad_listeners;
 };
 
 enum ORWindowError inter_create_window(const char *window_name,

@@ -7,6 +7,7 @@
 
 #include "orarena/orarena.h"
 #include "orwindow_errors.h"
+#include "orwindow_gamepad.h"
 #include "orwindow_keyboard.h"
 #include "orwindow_pointer.h"
 #include <stdint.h>
@@ -38,7 +39,8 @@ enum ORWindowError or_create_window(uint16_t width, uint16_t height,
 enum ORWindowError
 or_surface_setup(struct ORWindowListeners *window_listeners,
                  struct ORKeyboardListeners *keyboard_listeners,
-                 struct ORPointerListeners *pointer_listeners);
+                 struct ORPointerListeners *pointer_listeners,
+                 struct ORGamepadListeners *gamepad_listeners);
 
 enum ORWindowError or_start_main_loop();
 

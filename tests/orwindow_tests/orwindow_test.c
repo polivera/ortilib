@@ -118,8 +118,8 @@ int main() {
 
     or_create_window(1024, 768, "Window Name", "com.my.window.app",
                      sub_arena_create(arena, 50 * 1024 * 1024));
-    or_surface_setup(&window_listeners, &keyboard_listeners,
-                     &pointer_listeners);
+    or_surface_setup(&window_listeners, &keyboard_listeners, &pointer_listeners,
+                     NULL);
     or_start_main_loop();
     or_destroy_window();
     return 0;

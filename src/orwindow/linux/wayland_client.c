@@ -15,6 +15,7 @@
 #include "orwindow_internal.h"
 #include "wayland_client.h"
 #include "wayland_decorator.h"
+#include "wayland_gamepad.h"
 #include "wayland_keyboard.h"
 #include "wayland_pointer.h"
 
@@ -48,6 +49,8 @@ static void register_device(void *data, struct wl_registry *registry,
                               client->wayland);
             }
         }
+
+        setup_gamepad(NULL, NULL);
     }
 }
 

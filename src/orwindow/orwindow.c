@@ -40,10 +40,12 @@ enum ORWindowError or_create_window(const uint16_t width, const uint16_t height,
 enum ORWindowError
 or_surface_setup(struct ORWindowListeners *window_listeners,
                  struct ORKeyboardListeners *keyboard_listeners,
-                 struct ORPointerListeners *pointer_listeners) {
+                 struct ORPointerListeners *pointer_listeners,
+                 struct ORGamepadListeners *gamepad_listeners) {
     listeners.window_listeners = window_listeners;
     listeners.keyboard_listeners = keyboard_listeners;
     listeners.pointer_listeners = pointer_listeners;
+    listeners.gamepad_listeners = gamepad_listeners;
     return inter_surface_setup(bitmap, &listeners);
 }
 
