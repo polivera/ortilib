@@ -8,6 +8,58 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef OR_DEBUG_MEMORY
+#define OR_LOG_ALLOC(arena, size, aligned)                                     \
+    int_or_log_alloc(arena, size, aligned)
+#define OR_LOG_RESET(arena) int_or_log_reset(arena)
+#define OR_LOG_CREATE(arena, size) int_or_log_create(arena, size)
+#define OR_LOG_DESTROY(arena) int_or_log_destroy(arena)
+#else
+#define OR_LOG_ALLOC(arena, size, aligned)
+#define OR_LOG_RESET(arena)
+#define OR_LOG_CREATE(arena, size)
+#define OR_LOG_DESTROY(arena)
+#endif
+
+static void int_or_log_alloc(const struct ORArena *arena, const size_t size,
+                             const size_t aligned) {
+    if (arena->parent == NULL) {
+        printf("[ORArena %p] Allocating %zu bytes (aligned: %zu). Used %zu\n",
+               (const void *)arena, size, aligned, arena->used_size);
+    } else {
+        printf(
+            "Sub [ORArena %p] Allocating %zu bytes (aligned: %zu). Used %zu\n",
+            (const void *)arena, size, aligned, arena->used_size);
+    }
+}
+static void int_or_log_reset(const struct ORArena *arena) {
+    if (arena->parent == NULL) {
+        printf("[ORArena %p] Reset (previous used: %zu)\n", (const void *)arena,
+               arena->used_size);
+    } else {
+        printf("Sub [ORArena %p] Reset (previous used: %zu)\n",
+               (const void *)arena, arena->used_size);
+    }
+}
+static void int_or_log_create(const struct ORArena *arena, const size_t size) {
+    if (arena->parent == NULL) {
+        printf("[ORArena %p] Created with size %zu\n", (const void *)arena,
+               size);
+    } else {
+        printf("Sub [ORArena %p] Created with size %zu\n", (const void *)arena,
+               size);
+    }
+}
+static void int_or_log_destroy(const struct ORArena *arena) {
+    if (arena->parent == NULL) {
+        printf("[ORArena %p] Destroyed (final used: %zu/%zu)\n",
+               (const void *)arena, arena->used_size, arena->total_size);
+    } else {
+        printf("Sub [ORArena %p] Destroyed (final used: %zu/%zu)\n",
+               (const void *)arena, arena->used_size, arena->total_size);
+    }
+}
+
 static size_t align_up(const size_t size, const size_t alignment) {
     return (size + alignment - 1) & ~(alignment - 1);
 }
@@ -40,11 +92,13 @@ static struct ORArena *inter_arena_create(const size_t initial_size,
     // Set the memory pointer at the start of the memory field.
     arena->memory =
         (void *)((char *)arena + align_up(arena_struct_size, MAX_ALIGNMENT));
+    OR_LOG_CREATE(arena, initial_size);
     return arena;
 }
 
 struct ORArena *arena_create(const size_t initial_size) {
-    return inter_arena_create(initial_size, false);
+    struct ORArena *arena = inter_arena_create(initial_size, false);
+    return arena;
 }
 
 struct ORArena *arena_create_shared(const size_t initial_size) {
@@ -52,11 +106,15 @@ struct ORArena *arena_create_shared(const size_t initial_size) {
 }
 
 void arena_destroy(struct ORArena *arena) {
-    // TODO: Check that sub-arena are not used with destroy by checking for
-    // parent
+    if (arena->parent != NULL) {
+        sub_arena_destroy(arena);
+        return;
+    }
     if (virtual_free(arena, arena->total_size) == 1) {
         fprintf(stderr, "Cannot release memory\n");
+        return;
     }
+    OR_LOG_DESTROY(arena);
 }
 
 void *arena_alloc_aligned(struct ORArena *arena, const size_t size,
@@ -74,6 +132,7 @@ void *arena_alloc_aligned(struct ORArena *arena, const size_t size,
     }
     arena->previous_size = arena->used_size;
     arena->used_size = new_used_size;
+    OR_LOG_ALLOC(arena, size, alignment);
     return arena->memory + aligned_start;
 }
 
@@ -85,7 +144,10 @@ void arena_pop(struct ORArena *arena) {
     arena->used_size = arena->previous_size;
 }
 
-void arena_reset(struct ORArena *arena) { arena->used_size = 0; }
+void arena_reset(struct ORArena *arena) {
+    OR_LOG_RESET(arena);
+    arena->used_size = 0;
+}
 
 struct ORArena *sub_arena_create(struct ORArena *arena,
                                  const size_t initial_size) {
@@ -104,10 +166,12 @@ struct ORArena *sub_arena_create(struct ORArena *arena,
     sub_arena->memory = (void *)((char *)sub_arena + sizeof(struct ORArena));
     // Don't allow arena to be reset
     arena->previous_size = arena->used_size;
+    OR_LOG_CREATE(sub_arena, initial_size);
     return sub_arena;
 }
 
 void sub_arena_destroy(const struct ORArena *sub_arena) {
+    OR_LOG_DESTROY(sub_arena);
     memset((void *)sub_arena, 0,
            sub_arena->total_size + sizeof(struct ORArena));
 }
