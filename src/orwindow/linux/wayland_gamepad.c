@@ -3,7 +3,10 @@
 //
 
 #include "wayland_gamepad.h"
+
 #include "orwindow/orwindow_gamepad.h"
+#include "orwindow_internal.h"
+#include "wayland_decorator.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -12,13 +15,14 @@
 #include <stdio.h>
 #include <unistd.h>
 
-static struct GamepadState gamepads[MAX_GAMEPADS] = {0};
-static struct ORGamepadListeners gamepad_listeners = {0};
+static struct GamepadState gamepads[OR_MAX_GAMEPADS] = {0};
+static enum ORGamepadButton button_map[11] = {0};
+static enum ORGamepadStick stick_map[16] = {0};
 static pthread_t gamepad_thread;
-static bool thread_running = false;
 
-// Maps raw button codes to our enum
-static uint16_t button_map[16] = {0};
+static void initialize_gamepad_ids() {}
+
+static void initialize_stick_map() {}
 
 static void initialize_button_map() {
     button_map[0] = OR_GAMEPAD_A;
@@ -35,15 +39,18 @@ static void initialize_button_map() {
 }
 
 static void handle_button_event(const int gamepad_id,
-                                const struct js_event *event) {
-    if (event->type & JS_EVENT_BUTTON) {
-        if (gamepad_listeners.button_press && event->value) {
-            gamepad_listeners.button_press(
-                gamepad_id, button_map[event->number], event->time);
-        } else if (gamepad_listeners.button_release && !event->value) {
-            gamepad_listeners.button_release(
-                gamepad_id, button_map[event->number], event->time);
+                                const struct js_event *event,
+                                const struct ORGamepadListeners *listeners) {
+    if (event->value > 0) {
+        if (listeners->button_press) {
+            listeners->button_press(gamepad_id, button_map[event->number],
+                                    event->number, time(NULL));
         }
+        return;
+    }
+    if (listeners->button_release) {
+        listeners->button_release(gamepad_id, button_map[event->number],
+                                  event->number, time(NULL));
     }
 }
 
@@ -63,21 +70,51 @@ static void handle_axis_event(const int gamepad_id,
                    event->value);
         }
     }
-    if (event->type & JS_EVENT_AXIS && gamepad_listeners.axis_motion) {
-        printf("motion axis: %i - motion value: %i\n", event->number,
-               event->value);
-        gamepad_listeners.axis_motion(gamepad_id, event->number, event->value,
-                                      event->time);
+}
+
+static void handle_gamepad_event(const int gamepad_id,
+                                 const struct js_event *event,
+                                 const struct ORGamepadListeners *listeners) {
+    switch (event->type) {
+    case JS_EVENT_BUTTON:
+        handle_button_event(gamepad_id, event, listeners);
+        break;
+    case JS_EVENT_AXIS:
+        // handle_axis_event(gamepad_id, event);
+        break;
+    case JS_EVENT_INIT:
+        printf("initializing gamepad id: %i\n", gamepad_id);
+        break;
+    default:
+        // printf("unknown joystick event %i \n", event->type);
+        break;
+    }
+}
+
+static void
+handle_controller_connected(const int gamepad_id,
+                            const struct ORGamepadListeners *listeners) {
+    gamepads[gamepad_id].is_connected = true;
+    if (listeners->connected) {
+        listeners->connected(gamepad_id);
+    }
+}
+
+static void
+handle_controller_disconnected(const int gamepad_id,
+                               const struct ORGamepadListeners *listeners) {
+    gamepads[gamepad_id].is_connected = false;
+    if (listeners->disconnected) {
+        listeners->disconnected(gamepad_id);
     }
 }
 
 static void *gamepad_poll_thread(void *arg) {
     struct js_event event;
+    const struct InterWaylandClient *client = arg;
 
-    // TODO: This has to match the window close
-    // TODO: Use is_open (or similar) from wayland client.
-    while (thread_running) {
-        for (int i = 0; i < MAX_GAMEPADS; i++) {
+    while (client->is_running) {
+        for (int i = 0; i < OR_MAX_GAMEPADS; i++) {
             // TODO: This could go on a static function so I can use it on entry
             // point. If no controllers are connected I should not call threads
             if (!gamepads[i].is_connected) {
@@ -87,26 +124,23 @@ static void *gamepad_poll_thread(void *arg) {
 
                 gamepads[i].fd = open(device_path, O_RDONLY | O_NONBLOCK);
                 if (gamepads[i].fd != -1) {
-                    gamepads[i].is_connected = true;
-                    if (gamepad_listeners.connected) {
-                        gamepad_listeners.connected(i);
-                    }
+                    handle_controller_connected(
+                        i, client->listeners->gamepad_listeners);
                 }
             }
 
             if (gamepads[i].is_connected) {
+                // Should each controller be its own thread? what happen if
+                // if the controller keep sending events?
                 while (read(gamepads[i].fd, &event, sizeof(event)) > 0) {
-                    handle_button_event(i, &event);
-                    handle_axis_event(i, &event);
+                    handle_gamepad_event(i, &event,
+                                         client->listeners->gamepad_listeners);
                 }
-
                 // Check if device was disconnected
                 if (errno == ENODEV) {
                     close(gamepads[i].fd);
-                    gamepads[i].is_connected = false;
-                    if (gamepad_listeners.disconnected) {
-                        gamepad_listeners.disconnected(i);
-                    }
+                    handle_controller_disconnected(
+                        i, client->listeners->gamepad_listeners);
                 }
             }
         }
@@ -115,31 +149,21 @@ static void *gamepad_poll_thread(void *arg) {
     return NULL;
 }
 
-void setup_gamepad(const struct ORGamepadListeners *gp_listeners,
-                   struct InterWayland *wayland) {
-    // TODO: Remove this intermediate variable, if no event were given the
-    // thread should not work
-    if (gp_listeners) {
-        gamepad_listeners = *gp_listeners;
-    }
-
+void setup_gamepad(struct InterWaylandClient *client) {
     initialize_button_map();
 
-    // TODO: Should I open thread if there are no controllers connected?
-    // TODO: Pass wayland client.
+    // TODO: Shouldn't I use a thread for each control?
     // Start the gamepad polling thread
-    thread_running = true;
-    if (pthread_create(&gamepad_thread, NULL, gamepad_poll_thread, NULL) != 0) {
+    if (pthread_create(&gamepad_thread, NULL, gamepad_poll_thread, client) !=
+        0) {
         fprintf(stderr, "Failed to create gamepad polling thread\n");
-        return;
     }
 }
 
 void cleanup_gamepad(void) {
-    thread_running = false;
     pthread_join(gamepad_thread, NULL);
 
-    for (int i = 0; i < MAX_GAMEPADS; i++) {
+    for (int i = 0; i < OR_MAX_GAMEPADS; i++) {
         if (gamepads[i].is_connected) {
             close(gamepads[i].fd);
             gamepads[i].is_connected = false;

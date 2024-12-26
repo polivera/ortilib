@@ -48,4 +48,8 @@ enum ORWindowError inter_start_drawing() {
     return inter_wl_start_drawing(wlclient);
 }
 
-void inter_remove_window(struct ORArena *arena) { arena_destroy(arena); }
+void inter_remove_window(struct ORArena *arena) {
+    // TODO: check if wayland or X11
+    wlclient->is_running = false;
+    arena_destroy(arena);
+}

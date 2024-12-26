@@ -28,7 +28,7 @@
 static void register_device(void *data, struct wl_registry *registry,
                             uint32_t name, const char *interface,
                             uint32_t version) {
-    const struct InterWaylandClient *client = data;
+    struct InterWaylandClient *client = data;
     if (strcmp(interface, wl_compositor_interface.name) == 0) {
         client->wayland->compositor =
             wl_registry_bind(registry, name, &wl_compositor_interface, version);
@@ -48,9 +48,10 @@ static void register_device(void *data, struct wl_registry *registry,
                 setup_pointer(client->listeners->pointer_listeners,
                               client->wayland);
             }
+            if (client->listeners->gamepad_listeners) {
+                setup_gamepad(client);
+            }
         }
-
-        setup_gamepad(NULL, NULL);
     }
 }
 
@@ -162,6 +163,7 @@ struct InterWaylandClient *inter_get_wayland_client(const char *window_name,
     }
 
     client->arena = arena;
+    client->is_running = true;
     return client;
 }
 

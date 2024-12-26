@@ -11,7 +11,6 @@
 #include <stdint.h>
 
 // Maximum number of gamepads that can be connected simultaneously
-#define MAX_GAMEPADS 4
 #define GAMEPAD_PATH_FORMAT "/dev/input/js%d"
 
 // Gamepad state structure
@@ -22,8 +21,7 @@ struct GamepadState {
     uint16_t button_states; // Bitmap of current button states
 };
 
-void setup_gamepad(const struct ORGamepadListeners *gp_listeners,
-                   struct InterWayland *wayland);
+void setup_gamepad(struct InterWaylandClient *client);
 
 void cleanup_gamepad(void);
 

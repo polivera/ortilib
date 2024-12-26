@@ -27,6 +27,7 @@ struct InterWaylandClient {
     struct InterDecoration *libdecor;
     struct InterListeners *listeners;
     struct ORArena *arena;
+    bool is_running;
 };
 
 struct InterWaylandClient *inter_get_wayland_client(const char *window_name,
