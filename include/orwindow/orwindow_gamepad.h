@@ -5,6 +5,7 @@
 #ifndef ORWINDOW_GAMEPAD_H
 #define ORWINDOW_GAMEPAD_H
 
+#include <orwindow/orwindow_gamepad.h>
 #include <stdint.h>
 #include <time.h>
 
@@ -29,6 +30,10 @@ enum ORGamepadButton {
     OR_GAMEPAD_HOME,
     OR_GAMEPAD_L3,
     OR_GAMEPAD_R3,
+    OR_GAMEPAD_DPAD_UP,
+    OR_GAMEPAD_DPAD_DOWN,
+    OR_GAMEPAD_DPAD_LEFT,
+    OR_GAMEPAD_DPAD_RIGHT,
     OR_GAMEPAD_UNKNOWN,
 };
 
@@ -52,13 +57,25 @@ struct ORGamepadListeners {
                          uint16_t os_button, time_t time);
     void (*button_release)(uint8_t gamepad_id, enum ORGamepadButton button,
                            uint16_t os_button, time_t time);
-    void (*axis_motion)(uint8_t gamepad_id, enum ORGamepadStick stick,
-                        enum ORGamepadStickAxis axis, uint16_t value,
-                        time_t time);
+    void (*stick_motion)(uint8_t gamepad_id, enum ORGamepadStick stick,
+                         enum ORGamepadStickAxis axis, uint16_t value,
+                         time_t time);
     void (*trigger_motion)(uint8_t gamepad_id, enum ORGamepadTrigger trigger,
                            uint16_t value, time_t time);
+
+    // TODO: can I get information about the connected controller?
     void (*connected)(uint8_t gamepad_id);
     void (*disconnected)(uint8_t gamepad_id);
+
+    // TODO: Implement
+    void (*set_rumble)(uint8_t gamepad_id, uint16_t strong_magnitude,
+                       uint16_t weak_magnitude, uint16_t duration_ms);
+
+    // Configuration
+    void (*set_stick_deadzone)(uint8_t gamepad_id, enum ORGamepadStick stick,
+                               float deadzone);
+    void (*set_trigger_deadzone)(uint8_t gamepad_id,
+                                 enum ORGamepadTrigger trigger, float deadzone);
 };
 
 #endif // ORWINDOW_GAMEPAD_H
