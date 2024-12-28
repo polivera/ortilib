@@ -19,6 +19,8 @@ struct GamepadState {
     bool is_connected;      // Whether the gamepad is currently connected
     short axes[8];          // Raw axes values
     uint16_t button_states; // Bitmap of current button states
+    bool dpad_down_pressed; //
+    bool dpad_right_pressed;
 };
 
 void setup_gamepad(struct InterWaylandClient *client);

@@ -126,9 +126,16 @@ void gamepad_disconnect(uint8_t gamepad_id) {
     printf("Gamepad %i disconnected\n", gamepad_id);
 }
 
+void gamepad_trigger_motion(uint8_t gamepad_id, enum ORGamepadTrigger trigger,
+                            uint16_t value, time_t time) {
+    printf("Gamepad %i trigger %i at %ld with force %i\n", gamepad_id, trigger,
+           time, value);
+}
+
 struct ORGamepadListeners gamepad_listeners = {
     .button_press = button_press,
     .button_release = button_release,
+    .trigger_motion = gamepad_trigger_motion,
     .connected = gamepad_connect,
     .disconnected = gamepad_disconnect,
 };

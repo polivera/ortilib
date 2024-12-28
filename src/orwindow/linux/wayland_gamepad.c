@@ -23,21 +23,22 @@
 
 static struct GamepadState gamepads[OR_MAX_GAMEPADS] = {0};
 static enum ORGamepadButton button_map[15] = {0};
-static enum ORGamepadStick axis_input_map[6] = {0};
-// Index 0 is true if DOWN arrow was pressed before and index 1 is true if RIGHT
-// arrow was pressed
-static bool was_positive_dpad_axis_pressed[2] = {false, false};
+static enum ORGamepadStick sticks_and_triggers_map[6] = {0};
+static uint16_t trigger_deadzone = 2000;
 static pthread_t gamepad_thread;
 
 static void initialize_gamepad_ids() {}
 
-static void initialize_axis_inputs_map() {
-    axis_input_map[0] = OR_LEFT_STICK;
-    axis_input_map[1] = OR_LEFT_STICK;
-    axis_input_map[2] = OR_LEFT_TRIGGER;
-    axis_input_map[3] = OR_RIGHT_STICK;
-    axis_input_map[4] = OR_RIGHT_STICK;
-    axis_input_map[5] = OR_RIGHT_TRIGGER;
+/**
+ * Map sticks and triggers
+ */
+static void initialize_sticks_and_triggers_map() {
+    sticks_and_triggers_map[0] = OR_LEFT_STICK;
+    sticks_and_triggers_map[1] = OR_LEFT_STICK;
+    sticks_and_triggers_map[2] = OR_LEFT_TRIGGER;
+    sticks_and_triggers_map[3] = OR_RIGHT_STICK;
+    sticks_and_triggers_map[4] = OR_RIGHT_STICK;
+    sticks_and_triggers_map[5] = OR_RIGHT_TRIGGER;
 }
 
 static void initialize_button_map() {
@@ -56,7 +57,6 @@ static void initialize_button_map() {
     button_map[12] = OR_GAMEPAD_DPAD_DOWN;
     button_map[13] = OR_GAMEPAD_DPAD_LEFT;
     button_map[14] = OR_GAMEPAD_DPAD_RIGHT;
-    // TODO: Add DPAD map
 }
 
 static void button_action(const int gamepad_id,
@@ -86,12 +86,6 @@ static void handle_button_event(const int gamepad_id,
                   event->number, event->value > 0);
 }
 
-static void handle_stick_event(const int gamepad_id,
-                               const struct js_event *event,
-                               const struct ORGamepadListeners *listeners) {
-    // printf("handle_stick_event: gamepad_id=%d\n", gamepad_id);
-}
-
 static void handle_dpad_event(const int gamepad_id,
                               const struct js_event *event,
                               const struct ORGamepadListeners *listeners) {
@@ -99,7 +93,7 @@ static void handle_dpad_event(const int gamepad_id,
         if (event->value > 0) {
             button_action(gamepad_id, listeners, OR_GAMEPAD_DPAD_DOWN, -1,
                           true);
-            was_positive_dpad_axis_pressed[0] = true;
+            gamepads[gamepad_id].dpad_down_pressed = true;
             return;
         }
 
@@ -108,10 +102,10 @@ static void handle_dpad_event(const int gamepad_id,
             return;
         }
 
-        if (was_positive_dpad_axis_pressed[0]) {
+        if (gamepads[gamepad_id].dpad_down_pressed) {
             button_action(gamepad_id, listeners, OR_GAMEPAD_DPAD_DOWN, -1,
                           false);
-            was_positive_dpad_axis_pressed[0] = false;
+            gamepads[gamepad_id].dpad_down_pressed = false;
             return;
         }
 
@@ -121,7 +115,7 @@ static void handle_dpad_event(const int gamepad_id,
 
     if (event->value > 0) {
         button_action(gamepad_id, listeners, OR_GAMEPAD_DPAD_RIGHT, -1, true);
-        was_positive_dpad_axis_pressed[1] = true;
+        gamepads[gamepad_id].dpad_right_pressed = true;
         return;
     }
 
@@ -130,9 +124,9 @@ static void handle_dpad_event(const int gamepad_id,
         return;
     }
 
-    if (was_positive_dpad_axis_pressed[1]) {
+    if (gamepads[gamepad_id].dpad_right_pressed) {
         button_action(gamepad_id, listeners, OR_GAMEPAD_DPAD_RIGHT, -1, false);
-        was_positive_dpad_axis_pressed[1] = false;
+        gamepads[gamepad_id].dpad_right_pressed = false;
         return;
     }
 
@@ -142,13 +136,23 @@ static void handle_dpad_event(const int gamepad_id,
 static void handle_trigger_event(const int gamepad_id,
                                  const struct js_event *event,
                                  const struct ORGamepadListeners *listeners) {
-    printf("handle_trigger_event: gamepad_id=%d\n", gamepad_id);
+    if (listeners->trigger_motion) {
+        listeners->trigger_motion(gamepad_id,
+                                  sticks_and_triggers_map[event->number],
+                                  event->value + INT16_MAX, time(NULL));
+    }
+}
+
+static void handle_stick_event(const int gamepad_id,
+                               const struct js_event *event,
+                               const struct ORGamepadListeners *listeners) {
+
+    // printf("handle_stick_event: gamepad_id=%d\n", gamepad_id);
 }
 
 static void handle_axis_event(const int gamepad_id,
                               const struct js_event *event,
                               const struct ORGamepadListeners *listeners) {
-
     if (event->number == LEFT_TRIGGER_ID || event->number == RIGHT_TRIGGER_ID) {
         handle_trigger_event(gamepad_id, event, listeners);
         return;
@@ -175,7 +179,8 @@ static void handle_gamepad_event(const int gamepad_id,
         printf("initializing gamepad id: %i\n", gamepad_id);
         break;
     default:
-        // printf("unknown joystick event %i \n", event->type);
+        printf("unknown joystick event type=%i value=%i number=%i \n",
+               event->type, event->value, event->number);
         break;
     }
 }
@@ -220,7 +225,7 @@ static void *gamepad_poll_thread(void *arg) {
 
             if (gamepads[i].is_connected) {
                 // Should each controller be its own thread? what happen if
-                // if the controller keep sending events?
+                // the controller keep sending events?
                 while (read(gamepads[i].fd, &event, sizeof(event)) > 0) {
                     handle_gamepad_event(i, &event,
                                          client->listeners->gamepad_listeners);
@@ -240,7 +245,7 @@ static void *gamepad_poll_thread(void *arg) {
 
 void setup_gamepad(struct InterWaylandClient *client) {
     initialize_button_map();
-    initialize_axis_inputs_map();
+    initialize_sticks_and_triggers_map();
 
     // TODO: Shouldn't I use a thread for each control?
     // Start the gamepad polling thread
