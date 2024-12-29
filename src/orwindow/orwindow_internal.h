@@ -28,6 +28,10 @@ inter_start_drawing();
 enum ORWindowError
 inter_toggle_fullscreen();
 
+bool
+inter_gamepad_set_rumble(uint8_t gamepad_id, float strong_magnitude,
+                         float weak_magnitude);
+
 void
 inter_remove_window(struct ORArena *arena);
 

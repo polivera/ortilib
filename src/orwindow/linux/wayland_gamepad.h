@@ -12,6 +12,7 @@
 
 // Maximum number of gamepads that can be connected simultaneously
 #define GAMEPAD_PATH_FORMAT "/dev/input/js%d"
+#define GAMEPAD_EVENT_PATH_FORMAT "/dev/input/event%d"
 
 // Gamepad state structure
 struct GamepadState {
@@ -21,10 +22,18 @@ struct GamepadState {
     uint16_t button_states; // Bitmap of current button states
     bool dpad_down_pressed;
     bool dpad_right_pressed;
+
+    int ff_fd;       // Force feedback file descriptor
+    short effect_id; // Effect ID for strong rumble
+    bool has_rumble; // Whether the device supports rumble
 };
 
 void
 setup_gamepad(const struct InterWaylandClient *client);
+
+bool
+gamepad_set_rumble(int gamepad_id, float strong_magnitude,
+                   float weak_magnitude);
 
 void
 cleanup_gamepad(void);

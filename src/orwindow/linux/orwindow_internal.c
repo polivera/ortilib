@@ -5,6 +5,8 @@
 #include "../orwindow_internal.h"
 #include "wayland_client.h"
 #include "wayland_decorator.h"
+#include "wayland_gamepad.h"
+
 #include <stdio.h>
 
 struct InterWaylandClient *wlclient;
@@ -49,6 +51,12 @@ enum ORWindowError
 inter_start_drawing() {
     // TODO: Check here if wayland or X11
     return inter_wl_start_drawing(wlclient);
+}
+
+bool
+inter_gamepad_set_rumble(uint8_t gamepad_id, float strong_magnitude,
+                         float weak_magnitude) {
+    return gamepad_set_rumble(gamepad_id, strong_magnitude, weak_magnitude);
 }
 
 void

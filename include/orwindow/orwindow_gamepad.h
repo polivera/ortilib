@@ -6,6 +6,7 @@
 #define ORWINDOW_GAMEPAD_H
 
 #include <orwindow/orwindow_gamepad.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
 
@@ -66,10 +67,10 @@ struct ORGamepadListeners {
     // TODO: can I get information about the connected controller?
     void (*connected)(uint8_t gamepad_id);
     void (*disconnected)(uint8_t gamepad_id);
-
-    // TODO: Implement
-    void (*set_rumble)(uint8_t gamepad_id, uint16_t strong_magnitude,
-                       uint16_t weak_magnitude, uint16_t duration_ms);
 };
+
+bool
+or_gamepad_set_rumble(uint8_t gamepad_id, float strong_magnitude,
+                      float weak_magnitude);
 
 #endif // ORWINDOW_GAMEPAD_H

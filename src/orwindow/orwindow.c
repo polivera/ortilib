@@ -61,6 +61,13 @@ or_toggle_fullscreen() {
     return inter_toggle_fullscreen();
 }
 
+bool
+or_gamepad_set_rumble(uint8_t gamepad_id, float strong_magnitude,
+                      float weak_magnitude) {
+    return inter_gamepad_set_rumble(gamepad_id, strong_magnitude,
+                                    weak_magnitude);
+}
+
 void
 or_destroy_window() {
     return inter_remove_window(arena);

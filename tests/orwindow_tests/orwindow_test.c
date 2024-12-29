@@ -135,6 +135,13 @@ struct ORWindowListeners window_listeners = {
 void
 button_press(uint8_t gamepad_id, enum ORGamepadButton button,
              uint16_t os_button, time_t time) {
+    if (button == OR_GAMEPAD_X) {
+        or_gamepad_set_rumble(gamepad_id, 0.0f, 0.25f);
+    }
+
+    if (button == OR_GAMEPAD_B) {
+        or_gamepad_set_rumble(gamepad_id, 0.0f, 0.0f);
+    }
     printf("Gamepad ID [%i] has PRESSED button %i at %ld\n", gamepad_id, button,
            time);
 }

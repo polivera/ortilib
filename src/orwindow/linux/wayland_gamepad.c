@@ -13,6 +13,7 @@
 #include <linux/joystick.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 #define LEFT_TRIGGER_ID 2
@@ -226,6 +227,79 @@ handle_controller_disconnected(const int gamepad_id,
     }
 }
 
+bool
+gamepad_set_rumble(const int gamepad_id, const float strong_magnitude,
+                   const float weak_magnitude) {
+    struct GamepadState *gamepad = &gamepads[gamepad_id];
+    if (!gamepad->has_rumble)
+        return false;
+
+    struct ff_effect effect;
+    struct input_event play;
+
+    // Update strong rumble
+    memset(&effect, 0, sizeof(effect));
+    effect.type = FF_RUMBLE;
+    effect.id = gamepad->effect_id;
+    effect.u.rumble.strong_magnitude = (uint16_t)(strong_magnitude * 0xFFFF);
+    effect.u.rumble.weak_magnitude = (uint16_t)(weak_magnitude * 0xFFFF);
+
+    if (ioctl(gamepad->ff_fd, EVIOCSFF, &effect) < 0)
+        return false;
+
+    // Play strong effect
+    play.type = EV_FF;
+    play.code = effect.id;
+    play.value = 1;
+    if (write(gamepad->ff_fd, &play, sizeof(play)) < 0)
+        return false;
+
+    return true;
+}
+
+void
+setup_gamepad_rumble(struct GamepadState *gamepad) {
+    for (int i = 0; i < 32; i++) {
+        char event_path[64];
+        snprintf(event_path, sizeof(event_path), "/dev/input/event%d", i);
+        const int fd = open(event_path, O_RDWR);
+        if (fd < 0)
+            continue;
+
+        // Check if this is the right device
+        unsigned long features[4];
+        // TODO: wtf this line do?
+        if (ioctl(fd, EVIOCGBIT(0, sizeof(features)), features) < 0) {
+            close(fd);
+            continue;
+        }
+
+        // Check if device supports force feedback
+        if (features[0] & (1 << EV_FF)) {
+            gamepad->ff_fd = fd;
+            gamepad->has_rumble = true;
+
+            // Upload effects
+            struct ff_effect effect = {0};
+
+            // Setup strong rumble effect
+            effect.type = FF_RUMBLE;
+            effect.id = -1;
+            effect.u.rumble.strong_magnitude = 0;
+            effect.u.rumble.weak_magnitude = 0;
+
+            if (ioctl(fd, EVIOCSFF, &effect) < 0) {
+                gamepad->has_rumble = false;
+                close(fd);
+                continue;
+            }
+            gamepad->effect_id = effect.id;
+            break;
+        }
+        close(fd);
+    }
+}
+
 static void *
 single_gamepad_thread(void *arg) {
     const struct GamepadThread *thread_data = arg;
@@ -240,6 +314,7 @@ single_gamepad_thread(void *arg) {
             gamepads[thread_data->gamepad_id].fd =
                 open(device_path, O_RDONLY | O_NONBLOCK);
             if (gamepads[thread_data->gamepad_id].fd != -1) {
+                setup_gamepad_rumble(&gamepads[thread_data->gamepad_id]);
                 handle_controller_connected(thread_data->gamepad_id,
                                             thread_data->listeners);
             }
