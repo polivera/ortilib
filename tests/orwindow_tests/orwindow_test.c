@@ -8,11 +8,15 @@
 
 uint16_t x_offset = 0;
 uint16_t y_offset = 0;
+uint8_t x_stick_move = 0;
+uint8_t y_stick_move = 0;
 uint8_t is_key_pressed[255] = {0};
 uint8_t is_mouse_button_pressed[OR_ECLICK_LEN] = {0};
 
 void draw_little_frame(const struct ORBitmap *bitmap) {
     uint8_t *row = bitmap->mem;
+    x_offset += x_stick_move;
+    y_offset += y_stick_move;
     for (uint16_t y = 0; y < bitmap->height; y++) {
         uint8_t *pixel = row;
         for (uint16_t x = 0; x < bitmap->width; x++) {
@@ -75,6 +79,7 @@ struct ORKeyboardListeners keyboard_listeners = {.key_press = key_press,
 // -- MOUSE EVENTS --------- //
 void mouse_move(uint16_t point_x, uint16_t point_y) {
     if (is_mouse_button_pressed[OR_CLICK_LEFT] == 1) {
+        printf("mouse (%d, %d)\n", point_x, point_y);
         x_offset = -point_x;
         y_offset = -point_y;
     }
@@ -127,15 +132,27 @@ void gamepad_disconnect(uint8_t gamepad_id) {
 }
 
 void gamepad_trigger_motion(uint8_t gamepad_id, enum ORGamepadTrigger trigger,
-                            uint16_t value, time_t time) {
-    printf("Gamepad %i trigger %i at %ld with force %i\n", gamepad_id, trigger,
+                            float value, time_t time) {
+    printf("Gamepad %i trigger %i at %ld with force %f\n", gamepad_id, trigger,
            time, value);
+}
+
+void gamepad_stick_motion(uint8_t gamepad_id, enum ORGamepadStick stick,
+                          enum ORGamepadStickAxis axis, float value,
+                          time_t time) {
+    if (stick == OR_GAMEPAD_LEFT_STICK && axis == OR_AXIS_X) {
+        x_stick_move = value * -10;
+    }
+    if (stick == OR_GAMEPAD_LEFT_STICK && axis == OR_AXIS_Y) {
+        y_stick_move = value * -10;
+    }
 }
 
 struct ORGamepadListeners gamepad_listeners = {
     .button_press = button_press,
     .button_release = button_release,
     .trigger_motion = gamepad_trigger_motion,
+    .stick_motion = gamepad_stick_motion,
     .connected = gamepad_connect,
     .disconnected = gamepad_disconnect,
 };

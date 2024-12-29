@@ -38,8 +38,8 @@ enum ORGamepadButton {
 };
 
 enum ORGamepadStick {
-    OR_RIGHT_STICK,
-    OR_LEFT_STICK,
+    OR_GAMEPAD_RIGHT_STICK,
+    OR_GAMEPAD_LEFT_STICK,
 };
 
 enum ORGamepadStickAxis {
@@ -48,8 +48,8 @@ enum ORGamepadStickAxis {
 };
 
 enum ORGamepadTrigger {
-    OR_RIGHT_TRIGGER,
-    OR_LEFT_TRIGGER,
+    OR_GAMEPAD_RIGHT_TRIGGER,
+    OR_GAMEPAD_LEFT_TRIGGER,
 };
 
 struct ORGamepadListeners {
@@ -58,10 +58,10 @@ struct ORGamepadListeners {
     void (*button_release)(uint8_t gamepad_id, enum ORGamepadButton button,
                            uint16_t os_button, time_t time);
     void (*stick_motion)(uint8_t gamepad_id, enum ORGamepadStick stick,
-                         enum ORGamepadStickAxis axis, uint16_t value,
+                         enum ORGamepadStickAxis axis, float value,
                          time_t time);
     void (*trigger_motion)(uint8_t gamepad_id, enum ORGamepadTrigger trigger,
-                           uint16_t value, time_t time);
+                           float value, time_t time);
 
     // TODO: can I get information about the connected controller?
     void (*connected)(uint8_t gamepad_id);
@@ -74,8 +74,6 @@ struct ORGamepadListeners {
     // Configuration
     void (*set_stick_deadzone)(uint8_t gamepad_id, enum ORGamepadStick stick,
                                float deadzone);
-    void (*set_trigger_deadzone)(uint8_t gamepad_id,
-                                 enum ORGamepadTrigger trigger, float deadzone);
 };
 
 #endif // ORWINDOW_GAMEPAD_H

@@ -24,21 +24,26 @@
 static struct GamepadState gamepads[OR_MAX_GAMEPADS] = {0};
 static enum ORGamepadButton button_map[15] = {0};
 static enum ORGamepadStick sticks_and_triggers_map[6] = {0};
-static uint16_t trigger_deadzone = 2000;
+static enum ORGamepadStickAxis sticks_axis[5] = {0};
+static uint16_t stick_deadzone = 2000;
 static pthread_t gamepad_thread;
 
 static void initialize_gamepad_ids() {}
 
-/**
- * Map sticks and triggers
- */
+static void initialize_sticks_axis() {
+    sticks_axis[0] = OR_AXIS_X;
+    sticks_axis[1] = OR_AXIS_Y;
+    sticks_axis[3] = OR_AXIS_X;
+    sticks_axis[4] = OR_AXIS_Y;
+}
+
 static void initialize_sticks_and_triggers_map() {
-    sticks_and_triggers_map[0] = OR_LEFT_STICK;
-    sticks_and_triggers_map[1] = OR_LEFT_STICK;
-    sticks_and_triggers_map[2] = OR_LEFT_TRIGGER;
-    sticks_and_triggers_map[3] = OR_RIGHT_STICK;
-    sticks_and_triggers_map[4] = OR_RIGHT_STICK;
-    sticks_and_triggers_map[5] = OR_RIGHT_TRIGGER;
+    sticks_and_triggers_map[0] = OR_GAMEPAD_LEFT_STICK;
+    sticks_and_triggers_map[1] = OR_GAMEPAD_LEFT_STICK;
+    sticks_and_triggers_map[2] = OR_GAMEPAD_LEFT_TRIGGER;
+    sticks_and_triggers_map[3] = OR_GAMEPAD_RIGHT_STICK;
+    sticks_and_triggers_map[4] = OR_GAMEPAD_RIGHT_STICK;
+    sticks_and_triggers_map[5] = OR_GAMEPAD_RIGHT_TRIGGER;
 }
 
 static void initialize_button_map() {
@@ -136,18 +141,28 @@ static void handle_dpad_event(const int gamepad_id,
 static void handle_trigger_event(const int gamepad_id,
                                  const struct js_event *event,
                                  const struct ORGamepadListeners *listeners) {
-    if (listeners->trigger_motion) {
-        listeners->trigger_motion(gamepad_id,
-                                  sticks_and_triggers_map[event->number],
-                                  event->value + INT16_MAX, time(NULL));
-    }
+    if (!listeners->trigger_motion)
+        return;
+
+    const float trigger_value = (float)(event->value + INT16_MAX) / 65534.0f;
+    listeners->trigger_motion(gamepad_id,
+                              sticks_and_triggers_map[event->number],
+                              trigger_value, time(NULL));
 }
 
 static void handle_stick_event(const int gamepad_id,
                                const struct js_event *event,
                                const struct ORGamepadListeners *listeners) {
+    if (!listeners->stick_motion)
+        return;
 
-    // printf("handle_stick_event: gamepad_id=%d\n", gamepad_id);
+    float stick_value = (float)event->value / 32767.0f;
+    if (event->value < stick_deadzone && event->value > stick_deadzone * -1)
+        stick_value = 0.0f;
+
+    listeners->stick_motion(gamepad_id, sticks_and_triggers_map[event->number],
+                            sticks_axis[event->number], stick_value,
+                            time(NULL));
 }
 
 static void handle_axis_event(const int gamepad_id,
@@ -246,6 +261,7 @@ static void *gamepad_poll_thread(void *arg) {
 void setup_gamepad(struct InterWaylandClient *client) {
     initialize_button_map();
     initialize_sticks_and_triggers_map();
+    initialize_sticks_axis();
 
     // TODO: Shouldn't I use a thread for each control?
     // Start the gamepad polling thread
