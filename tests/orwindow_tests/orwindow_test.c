@@ -79,7 +79,6 @@ struct ORKeyboardListeners keyboard_listeners = {.key_press = key_press,
 // -- MOUSE EVENTS --------- //
 void mouse_move(uint16_t point_x, uint16_t point_y) {
     if (is_mouse_button_pressed[OR_CLICK_LEFT] == 1) {
-        printf("mouse (%d, %d)\n", point_x, point_y);
         x_offset = -point_x;
         y_offset = -point_y;
     }

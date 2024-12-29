@@ -21,23 +21,30 @@
 #define LEFT_RIGHT_DPAD_AXIS 6
 #define UP_DOWN_DPAD_AXIS 7
 
+struct GamepadThread {
+    pthread_t thread;
+    const bool *is_running;
+    int gamepad_id;
+    const struct ORGamepadListeners *listeners;
+};
+
+static struct GamepadThread gamepad_threads[OR_MAX_GAMEPADS] = {0};
 static struct GamepadState gamepads[OR_MAX_GAMEPADS] = {0};
 static enum ORGamepadButton button_map[15] = {0};
 static enum ORGamepadStick sticks_and_triggers_map[6] = {0};
 static enum ORGamepadStickAxis sticks_axis[5] = {0};
 static uint16_t stick_deadzone = 2000;
-static pthread_t gamepad_thread;
 
-static void initialize_gamepad_ids() {}
-
-static void initialize_sticks_axis() {
+static void
+initialize_sticks_axis() {
     sticks_axis[0] = OR_AXIS_X;
     sticks_axis[1] = OR_AXIS_Y;
     sticks_axis[3] = OR_AXIS_X;
     sticks_axis[4] = OR_AXIS_Y;
 }
 
-static void initialize_sticks_and_triggers_map() {
+static void
+initialize_sticks_and_triggers_map() {
     sticks_and_triggers_map[0] = OR_GAMEPAD_LEFT_STICK;
     sticks_and_triggers_map[1] = OR_GAMEPAD_LEFT_STICK;
     sticks_and_triggers_map[2] = OR_GAMEPAD_LEFT_TRIGGER;
@@ -46,7 +53,8 @@ static void initialize_sticks_and_triggers_map() {
     sticks_and_triggers_map[5] = OR_GAMEPAD_RIGHT_TRIGGER;
 }
 
-static void initialize_button_map() {
+static void
+initialize_button_map() {
     button_map[0] = OR_GAMEPAD_A;
     button_map[1] = OR_GAMEPAD_B;
     button_map[2] = OR_GAMEPAD_X;
@@ -64,10 +72,10 @@ static void initialize_button_map() {
     button_map[14] = OR_GAMEPAD_DPAD_RIGHT;
 }
 
-static void button_action(const int gamepad_id,
-                          const struct ORGamepadListeners *listeners,
-                          const uint8_t button_number,
-                          const uint8_t os_button_number, const bool press) {
+static void
+button_action(const int gamepad_id, const struct ORGamepadListeners *listeners,
+              const uint8_t button_number, const uint8_t os_button_number,
+              const bool press) {
     if (press && listeners->button_press) {
         listeners->button_press(gamepad_id, button_number, os_button_number,
                                 time(NULL));
@@ -79,9 +87,9 @@ static void button_action(const int gamepad_id,
     }
 }
 
-static void handle_button_event(const int gamepad_id,
-                                const struct js_event *event,
-                                const struct ORGamepadListeners *listeners) {
+static void
+handle_button_event(const int gamepad_id, const struct js_event *event,
+                    const struct ORGamepadListeners *listeners) {
     if (event->number < 0 || event->number > 10) {
         button_action(gamepad_id, listeners, OR_GAMEPAD_UNKNOWN, event->number,
                       event->value > 0);
@@ -91,9 +99,9 @@ static void handle_button_event(const int gamepad_id,
                   event->number, event->value > 0);
 }
 
-static void handle_dpad_event(const int gamepad_id,
-                              const struct js_event *event,
-                              const struct ORGamepadListeners *listeners) {
+static void
+handle_dpad_event(const int gamepad_id, const struct js_event *event,
+                  const struct ORGamepadListeners *listeners) {
     if (event->number == UP_DOWN_DPAD_AXIS) {
         if (event->value > 0) {
             button_action(gamepad_id, listeners, OR_GAMEPAD_DPAD_DOWN, -1,
@@ -138,9 +146,9 @@ static void handle_dpad_event(const int gamepad_id,
     button_action(gamepad_id, listeners, OR_GAMEPAD_DPAD_LEFT, -1, false);
 }
 
-static void handle_trigger_event(const int gamepad_id,
-                                 const struct js_event *event,
-                                 const struct ORGamepadListeners *listeners) {
+static void
+handle_trigger_event(const int gamepad_id, const struct js_event *event,
+                     const struct ORGamepadListeners *listeners) {
     if (!listeners->trigger_motion)
         return;
 
@@ -150,9 +158,9 @@ static void handle_trigger_event(const int gamepad_id,
                               trigger_value, time(NULL));
 }
 
-static void handle_stick_event(const int gamepad_id,
-                               const struct js_event *event,
-                               const struct ORGamepadListeners *listeners) {
+static void
+handle_stick_event(const int gamepad_id, const struct js_event *event,
+                   const struct ORGamepadListeners *listeners) {
     if (!listeners->stick_motion)
         return;
 
@@ -165,9 +173,9 @@ static void handle_stick_event(const int gamepad_id,
                             time(NULL));
 }
 
-static void handle_axis_event(const int gamepad_id,
-                              const struct js_event *event,
-                              const struct ORGamepadListeners *listeners) {
+static void
+handle_axis_event(const int gamepad_id, const struct js_event *event,
+                  const struct ORGamepadListeners *listeners) {
     if (event->number == LEFT_TRIGGER_ID || event->number == RIGHT_TRIGGER_ID) {
         handle_trigger_event(gamepad_id, event, listeners);
         return;
@@ -180,9 +188,9 @@ static void handle_axis_event(const int gamepad_id,
     handle_stick_event(gamepad_id, event, listeners);
 }
 
-static void handle_gamepad_event(const int gamepad_id,
-                                 const struct js_event *event,
-                                 const struct ORGamepadListeners *listeners) {
+static void
+handle_gamepad_event(const int gamepad_id, const struct js_event *event,
+                     const struct ORGamepadListeners *listeners) {
     switch (event->type) {
     case JS_EVENT_BUTTON:
         handle_button_event(gamepad_id, event, listeners);
@@ -218,63 +226,68 @@ handle_controller_disconnected(const int gamepad_id,
     }
 }
 
-static void *gamepad_poll_thread(void *arg) {
+static void *
+single_gamepad_thread(void *arg) {
+    const struct GamepadThread *thread_data = arg;
     struct js_event event;
-    const struct InterWaylandClient *client = arg;
 
-    while (client->is_running) {
-        for (int i = 0; i < OR_MAX_GAMEPADS; i++) {
-            // TODO: This could go on a static function so I can use it on entry
-            // point. If no controllers are connected I should not call threads
-            if (!gamepads[i].is_connected) {
-                char device_path[20];
-                snprintf(device_path, sizeof(device_path), GAMEPAD_PATH_FORMAT,
-                         i);
+    while (*thread_data->is_running) {
+        if (!gamepads[thread_data->gamepad_id].is_connected) {
+            char device_path[20];
+            snprintf(device_path, sizeof(device_path), GAMEPAD_PATH_FORMAT,
+                     thread_data->gamepad_id);
 
-                gamepads[i].fd = open(device_path, O_RDONLY | O_NONBLOCK);
-                if (gamepads[i].fd != -1) {
-                    handle_controller_connected(
-                        i, client->listeners->gamepad_listeners);
-                }
+            gamepads[thread_data->gamepad_id].fd =
+                open(device_path, O_RDONLY | O_NONBLOCK);
+            if (gamepads[thread_data->gamepad_id].fd != -1) {
+                handle_controller_connected(thread_data->gamepad_id,
+                                            thread_data->listeners);
+            }
+        }
+
+        if (gamepads[thread_data->gamepad_id].is_connected) {
+            while (read(gamepads[thread_data->gamepad_id].fd, &event,
+                        sizeof(event)) > 0) {
+                handle_gamepad_event(thread_data->gamepad_id, &event,
+                                     thread_data->listeners);
             }
 
-            if (gamepads[i].is_connected) {
-                // Should each controller be its own thread? what happen if
-                // the controller keep sending events?
-                while (read(gamepads[i].fd, &event, sizeof(event)) > 0) {
-                    handle_gamepad_event(i, &event,
-                                         client->listeners->gamepad_listeners);
-                }
-                // Check if device was disconnected
-                if (errno == ENODEV) {
-                    close(gamepads[i].fd);
-                    handle_controller_disconnected(
-                        i, client->listeners->gamepad_listeners);
-                }
+            if (errno == ENODEV) {
+                close(gamepads[thread_data->gamepad_id].fd);
+                handle_controller_disconnected(thread_data->gamepad_id,
+                                               thread_data->listeners);
             }
         }
         usleep(1000); // Sleep for 1ms to prevent busy waiting
     }
+
     return NULL;
 }
 
-void setup_gamepad(struct InterWaylandClient *client) {
+void
+setup_gamepad(const struct InterWaylandClient *client) {
     initialize_button_map();
     initialize_sticks_and_triggers_map();
     initialize_sticks_axis();
 
-    // TODO: Shouldn't I use a thread for each control?
-    // Start the gamepad polling thread
-    if (pthread_create(&gamepad_thread, NULL, gamepad_poll_thread, client) !=
-        0) {
-        fprintf(stderr, "Failed to create gamepad polling thread\n");
+    for (int i = 0; i < OR_MAX_GAMEPADS; i++) {
+        gamepad_threads[i].gamepad_id = i;
+        gamepad_threads[i].is_running = &client->is_running;
+        gamepad_threads[i].listeners = client->listeners->gamepad_listeners;
+
+        if (pthread_create(&gamepad_threads[i].thread, NULL,
+                           single_gamepad_thread, &gamepad_threads[i]) != 0) {
+            fprintf(stderr,
+                    "Failed to create gamepad thread for controller %d\n", i);
+        }
     }
 }
 
-void cleanup_gamepad(void) {
-    pthread_join(gamepad_thread, NULL);
-
+void
+cleanup_gamepad(void) {
     for (int i = 0; i < OR_MAX_GAMEPADS; i++) {
+        pthread_join(gamepad_threads[i].thread, NULL);
+
         if (gamepads[i].is_connected) {
             close(gamepads[i].fd);
             gamepads[i].is_connected = false;

@@ -70,10 +70,6 @@ struct ORGamepadListeners {
     // TODO: Implement
     void (*set_rumble)(uint8_t gamepad_id, uint16_t strong_magnitude,
                        uint16_t weak_magnitude, uint16_t duration_ms);
-
-    // Configuration
-    void (*set_stick_deadzone)(uint8_t gamepad_id, enum ORGamepadStick stick,
-                               float deadzone);
 };
 
 #endif // ORWINDOW_GAMEPAD_H
