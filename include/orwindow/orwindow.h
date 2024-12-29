@@ -29,12 +29,12 @@ struct ORWindowListeners {
     void (*close)();
 };
 
-void or_bitmap_reset(struct ORBitmap *bmp, uint16_t width, uint16_t height);
+void
+or_bitmap_reset(struct ORBitmap *bmp, uint16_t width, uint16_t height);
 
-enum ORWindowError or_create_window(uint16_t width, uint16_t height,
-                                    const char *window_name,
-                                    const char *process_name,
-                                    struct ORArena *extern_arena);
+enum ORWindowError
+or_create_window(uint16_t width, uint16_t height, const char *window_name,
+                 const char *process_name, struct ORArena *extern_arena);
 
 enum ORWindowError
 or_surface_setup(struct ORWindowListeners *window_listeners,
@@ -42,10 +42,13 @@ or_surface_setup(struct ORWindowListeners *window_listeners,
                  struct ORPointerListeners *pointer_listeners,
                  struct ORGamepadListeners *gamepad_listeners);
 
-enum ORWindowError or_start_main_loop();
+enum ORWindowError
+or_start_main_loop();
 
-enum ORWindowError or_toggle_fullscreen();
+enum ORWindowError
+or_toggle_fullscreen();
 
-void or_destroy_window();
+void
+or_destroy_window();
 
 #endif // ORTILIB_ORWINDOW_H

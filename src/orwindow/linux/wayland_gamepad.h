@@ -23,8 +23,10 @@ struct GamepadState {
     bool dpad_right_pressed;
 };
 
-void setup_gamepad(const struct InterWaylandClient *client);
+void
+setup_gamepad(const struct InterWaylandClient *client);
 
-void cleanup_gamepad(void);
+void
+cleanup_gamepad(void);
 
 #endif // WAYLAND_GAMEPAD_H

@@ -25,9 +25,9 @@
 
 // Registers devices from the Wayland registry by binding interfaces.
 // This will only run at window startup.
-static void register_device(void *data, struct wl_registry *registry,
-                            uint32_t name, const char *interface,
-                            uint32_t version) {
+static void
+register_device(void *data, struct wl_registry *registry, uint32_t name,
+                const char *interface, uint32_t version) {
     struct InterWaylandClient *client = data;
     if (strcmp(interface, wl_compositor_interface.name) == 0) {
         client->wayland->compositor =
@@ -56,8 +56,8 @@ static void register_device(void *data, struct wl_registry *registry,
 }
 
 // Do something when devices are unplugged?
-static void unregister_device(void *data, struct wl_registry *registry,
-                              uint32_t name) {
+static void
+unregister_device(void *data, struct wl_registry *registry, uint32_t name) {
     printf("Something has been unplugged?\n");
 }
 
@@ -67,8 +67,9 @@ struct wl_registry_listener registry_listener = {
     .global_remove = unregister_device,
 };
 
-void inter_draw(const struct ORBitmap *bitmap,
-                const struct ORWindowListeners *window_listeners) {
+void
+inter_draw(const struct ORBitmap *bitmap,
+           const struct ORWindowListeners *window_listeners) {
     if (window_listeners->draw) {
         window_listeners->draw(bitmap);
         return;
@@ -77,7 +78,8 @@ void inter_draw(const struct ORBitmap *bitmap,
 }
 
 // Renders a frame on the Wayland client
-void inter_frame_render(const struct InterWaylandClient *wlclient) {
+void
+inter_frame_render(const struct InterWaylandClient *wlclient) {
     inter_draw(wlclient->bitmap, wlclient->listeners->window_listeners);
     wl_surface_attach(wlclient->wayland->surface, wlclient->wayland->buffer, 0,
                       0);
@@ -90,7 +92,8 @@ void inter_frame_render(const struct InterWaylandClient *wlclient) {
 // Called when a new frame is ready to be drawn
 struct wl_callback_listener callback_listener;
 
-void wl_frame_new(void *data, struct wl_callback *cb, uint32_t cb_data) {
+void
+wl_frame_new(void *data, struct wl_callback *cb, uint32_t cb_data) {
     struct InterWaylandClient *wlclient = data;
     wl_callback_destroy(cb);
     cb = wl_surface_frame(wlclient->wayland->surface);
@@ -101,7 +104,8 @@ void wl_frame_new(void *data, struct wl_callback *cb, uint32_t cb_data) {
 struct wl_callback_listener callback_listener = {.done = wl_frame_new};
 
 // Initialize wayland related variables
-static enum ORWindowError init_wayland(struct InterWaylandClient *wlclient) {
+static enum ORWindowError
+init_wayland(struct InterWaylandClient *wlclient) {
     wlclient->wayland->buffer = NULL;
     // Attempts to connect to the Wayland display using an environment variable
     // or fallback to default server.
@@ -134,8 +138,8 @@ static enum ORWindowError init_wayland(struct InterWaylandClient *wlclient) {
 }
 
 // Create a wayland client struct
-struct InterWaylandClient *inter_get_wayland_client(const char *window_name,
-                                                    struct ORArena *arena) {
+struct InterWaylandClient *
+inter_get_wayland_client(const char *window_name, struct ORArena *arena) {
 
     struct InterWaylandClient *client =
         arena_alloc(arena, sizeof(struct InterWaylandClient));
@@ -210,8 +214,9 @@ inter_wl_window_resize(const struct InterWaylandClient *wlclient) {
 }
 
 // Setup wayland window client
-enum ORWindowError inter_wl_window_setup(struct ORBitmap *bmp,
-                                         struct InterWaylandClient *wlclient) {
+enum ORWindowError
+inter_wl_window_setup(struct ORBitmap *bmp,
+                      struct InterWaylandClient *wlclient) {
     if (wlclient == NULL) {
         return OR_DISPLAY_INIT_ERROR;
     }
@@ -224,7 +229,8 @@ enum ORWindowError inter_wl_window_setup(struct ORBitmap *bmp,
     return init_libdecor(wlclient);
 }
 
-enum ORWindowError inter_wl_start_drawing(struct InterWaylandClient *wlclient) {
+enum ORWindowError
+inter_wl_start_drawing(struct InterWaylandClient *wlclient) {
     if (wlclient == NULL) {
         return OR_DISPLAY_INIT_ERROR;
     }
@@ -238,7 +244,8 @@ enum ORWindowError inter_wl_start_drawing(struct InterWaylandClient *wlclient) {
     return OR_NO_ERROR;
 }
 
-void inter_wl_free_window(struct InterWaylandClient *wlclient) {
+void
+inter_wl_free_window(struct InterWaylandClient *wlclient) {
     if (wlclient != NULL && wlclient->wayland != NULL) {
         if (wlclient->wayland->buffer) {
             wl_buffer_destroy(wlclient->wayland->buffer);

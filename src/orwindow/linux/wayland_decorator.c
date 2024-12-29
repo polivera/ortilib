@@ -15,9 +15,10 @@
 /**
  * The code here is the one that actually add the border to the window
  */
-static void commit_frame(struct libdecor_frame *frame,
-                         struct libdecor_configuration *configuration,
-                         const struct ORBitmap *bitmap) {
+static void
+commit_frame(struct libdecor_frame *frame,
+             struct libdecor_configuration *configuration,
+             const struct ORBitmap *bitmap) {
     struct libdecor_state *state =
         libdecor_state_new(bitmap->width, bitmap->height);
     if (state == NULL) {
@@ -28,9 +29,9 @@ static void commit_frame(struct libdecor_frame *frame,
     libdecor_state_free(state);
 }
 
-static void decoration_config(struct libdecor_frame *frame,
-                              struct libdecor_configuration *configuration,
-                              void *data) {
+static void
+decoration_config(struct libdecor_frame *frame,
+                  struct libdecor_configuration *configuration, void *data) {
     const struct InterWaylandClient *client = data;
     int width = 0, height = 0;
 
@@ -56,11 +57,13 @@ static void decoration_config(struct libdecor_frame *frame,
     commit_frame(frame, configuration, client->bitmap);
 }
 
-static void decoration_commit(struct libdecor_frame *frame, void *data) {
+static void
+decoration_commit(struct libdecor_frame *frame, void *data) {
     printf("Decoration commit\n");
 }
 
-static void decoration_close(struct libdecor_frame *frame, void *data) {
+static void
+decoration_close(struct libdecor_frame *frame, void *data) {
     const struct InterWaylandClient *client = data;
     client->libdecor->is_open = false;
 }
@@ -72,9 +75,9 @@ static struct libdecor_frame_interface frame_events = {
 };
 
 // Toggle fullscreen
-void inter_wl_toggle_fullscreen(
-    struct InterDecoration *libdecor_client,
-    const struct ORWindowListeners *window_listeners) {
+void
+inter_wl_toggle_fullscreen(struct InterDecoration *libdecor_client,
+                           const struct ORWindowListeners *window_listeners) {
     if (!libdecor_client->is_fullscreen) {
         libdecor_frame_set_fullscreen(libdecor_client->frame, NULL);
         libdecor_client->is_fullscreen = true;
@@ -88,7 +91,8 @@ void inter_wl_toggle_fullscreen(
 }
 
 // Initialize libdecor
-enum ORWindowError init_libdecor(struct InterWaylandClient *wlclient) {
+enum ORWindowError
+init_libdecor(struct InterWaylandClient *wlclient) {
     wlclient->libdecor->is_fullscreen = false;
     wlclient->libdecor->is_open = false;
     wlclient->libdecor->base = libdecor_new(wlclient->wayland->display, NULL);
@@ -110,7 +114,8 @@ enum ORWindowError init_libdecor(struct InterWaylandClient *wlclient) {
  * Start window decoration.
  * @param libdecor_client
  */
-void inter_wl_start_decoration(struct InterDecoration *libdecor_client) {
+void
+inter_wl_start_decoration(struct InterDecoration *libdecor_client) {
     libdecor_frame_ref(libdecor_client->frame);
     libdecor_frame_set_title(libdecor_client->frame, libdecor_client->name);
     libdecor_frame_map(libdecor_client->frame);
@@ -121,7 +126,8 @@ void inter_wl_start_decoration(struct InterDecoration *libdecor_client) {
  * Clean up libdecor decoration.
  * @param wlclient InterWaylandClient
  */
-void inter_wl_destroy_libdecor(struct InterWaylandClient *wlclient) {
+void
+inter_wl_destroy_libdecor(struct InterWaylandClient *wlclient) {
     if (wlclient) {
         if (wlclient->libdecor->frame) {
             libdecor_frame_unref(wlclient->libdecor->frame);

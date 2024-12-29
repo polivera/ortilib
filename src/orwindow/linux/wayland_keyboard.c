@@ -13,7 +13,8 @@ struct ORWindowListeners window_listeners;
 static uint8_t active_mods = 0;
 static uint8_t key_map[255] = {KEY_UNKNOWN};
 
-static void initialize_key_map() {
+static void
+initialize_key_map() {
     key_map[1] = KEY_ESC;
     key_map[2] = KEY_1;
     key_map[3] = KEY_2;
@@ -97,31 +98,33 @@ static void initialize_key_map() {
     // TODO: Finish with the rest of the keys
 }
 
-static void keyboard_keymap(void *data, struct wl_keyboard *keyboard,
-                            uint32_t format, int fd, uint32_t size) {
+static void
+keyboard_keymap(void *data, struct wl_keyboard *keyboard, uint32_t format,
+                int fd, uint32_t size) {
     if (keyboard_listeners.load) {
         keyboard_listeners.load();
     }
 }
 
-static void keyboard_enter(void *data, struct wl_keyboard *keyboard,
-                           uint32_t serial, struct wl_surface *surface,
-                           struct wl_array *keys) {
+static void
+keyboard_enter(void *data, struct wl_keyboard *keyboard, uint32_t serial,
+               struct wl_surface *surface, struct wl_array *keys) {
     if (window_listeners.enter) {
         window_listeners.enter();
     }
 }
 
-static void keyboard_leave(void *data, struct wl_keyboard *keyboard,
-                           uint32_t serial, struct wl_surface *surface) {
+static void
+keyboard_leave(void *data, struct wl_keyboard *keyboard, uint32_t serial,
+               struct wl_surface *surface) {
     if (window_listeners.leave) {
         window_listeners.leave();
     }
 }
 
-static void keyboard_key(void *data, struct wl_keyboard *keyboard,
-                         uint32_t serial, uint32_t time, uint32_t key,
-                         uint32_t state) {
+static void
+keyboard_key(void *data, struct wl_keyboard *keyboard, uint32_t serial,
+             uint32_t time, uint32_t key, uint32_t state) {
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED &&
         keyboard_listeners.key_press) {
         keyboard_listeners.key_press(key_map[key], key, time, active_mods);
@@ -131,16 +134,17 @@ static void keyboard_key(void *data, struct wl_keyboard *keyboard,
     }
 }
 
-static void keyboard_modifiers(void *data, struct wl_keyboard *keyboard,
-                               uint32_t serial, uint32_t mods_depressed,
-                               uint32_t mods_latched, uint32_t mods_locked,
-                               uint32_t group) {
+static void
+keyboard_modifiers(void *data, struct wl_keyboard *keyboard, uint32_t serial,
+                   uint32_t mods_depressed, uint32_t mods_latched,
+                   uint32_t mods_locked, uint32_t group) {
     active_mods = mods_depressed;
 }
 
-void setup_keyboard(const struct ORWindowListeners *win_listeners,
-                    const struct ORKeyboardListeners *key_listeners,
-                    struct InterWayland *wayland) {
+void
+setup_keyboard(const struct ORWindowListeners *win_listeners,
+               const struct ORKeyboardListeners *key_listeners,
+               struct InterWayland *wayland) {
     wayland->keyboard = wl_seat_get_keyboard(wayland->seat);
     if (!wayland->keyboard) {
         fprintf(stderr, "Failed to get keyboard from seat.\n");

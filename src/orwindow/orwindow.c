@@ -12,8 +12,9 @@ struct ORArena *arena;
 struct ORBitmap *bitmap;
 struct InterListeners listeners;
 
-void or_bitmap_reset(struct ORBitmap *bmp, const uint16_t width,
-                     const uint16_t height) {
+void
+or_bitmap_reset(struct ORBitmap *bmp, const uint16_t width,
+                const uint16_t height) {
     bmp->mem = NULL;
     bmp->width = width;
     bmp->height = height;
@@ -21,10 +22,10 @@ void or_bitmap_reset(struct ORBitmap *bmp, const uint16_t width,
     bmp->stride = width * 4;
 }
 
-enum ORWindowError or_create_window(const uint16_t width, const uint16_t height,
-                                    const char *window_name,
-                                    const char *process_name,
-                                    struct ORArena *extern_arena) {
+enum ORWindowError
+or_create_window(const uint16_t width, const uint16_t height,
+                 const char *window_name, const char *process_name,
+                 struct ORArena *extern_arena) {
     arena = extern_arena;
     if (arena == NULL) {
         arena = arena_create_shared(100 * 1024 * 1024);
@@ -50,8 +51,17 @@ or_surface_setup(struct ORWindowListeners *window_listeners,
     return inter_surface_setup(bitmap, &listeners);
 }
 
-enum ORWindowError or_start_main_loop() { return inter_start_drawing(); }
+enum ORWindowError
+or_start_main_loop() {
+    return inter_start_drawing();
+}
 
-enum ORWindowError or_toggle_fullscreen() { return inter_toggle_fullscreen(); }
+enum ORWindowError
+or_toggle_fullscreen() {
+    return inter_toggle_fullscreen();
+}
 
-void or_destroy_window() { return inter_remove_window(arena); }
+void
+or_destroy_window() {
+    return inter_remove_window(arena);
+}

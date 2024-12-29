@@ -13,7 +13,8 @@ uint8_t y_stick_move = 0;
 uint8_t is_key_pressed[255] = {0};
 uint8_t is_mouse_button_pressed[OR_ECLICK_LEN] = {0};
 
-void draw_little_frame(const struct ORBitmap *bitmap) {
+void
+draw_little_frame(const struct ORBitmap *bitmap) {
     uint8_t *row = bitmap->mem;
     x_offset += x_stick_move;
     y_offset += y_stick_move;
@@ -64,29 +65,34 @@ void draw_little_frame(const struct ORBitmap *bitmap) {
 }
 
 // -- KEY EVENTS --------- //
-void key_press(enum ORKeys code, uint8_t os_code, time_t time, uint8_t mod) {
+void
+key_press(enum ORKeys code, uint8_t os_code, time_t time, uint8_t mod) {
     is_key_pressed[code] = 1;
     if (code == KEY_F11) {
         or_toggle_fullscreen();
     }
 }
-void key_release(enum ORKeys code, uint8_t os_code, time_t time, uint8_t mod) {
+void
+key_release(enum ORKeys code, uint8_t os_code, time_t time, uint8_t mod) {
     is_key_pressed[code] = 0;
 }
 struct ORKeyboardListeners keyboard_listeners = {.key_press = key_press,
                                                  .key_release = key_release};
 
 // -- MOUSE EVENTS --------- //
-void mouse_move(uint16_t point_x, uint16_t point_y) {
+void
+mouse_move(uint16_t point_x, uint16_t point_y) {
     if (is_mouse_button_pressed[OR_CLICK_LEFT] == 1) {
         x_offset = -point_x;
         y_offset = -point_y;
     }
 }
-void mouse_press(const enum ORPointerButton button, time_t time) {
+void
+mouse_press(const enum ORPointerButton button, time_t time) {
     is_mouse_button_pressed[button] = 1;
 }
-void mouse_release(const enum ORPointerButton button, time_t time) {
+void
+mouse_release(const enum ORPointerButton button, time_t time) {
     is_mouse_button_pressed[button] = 0;
 }
 struct ORPointerListeners pointer_listeners = {
@@ -96,11 +102,26 @@ struct ORPointerListeners pointer_listeners = {
 };
 
 // -- WINDOW EVENTS --------- //
-void window_leave() { printf("Window left\n"); }
-void window_enter() { printf("Window ENTER\n"); }
-void window_fullscreen() { printf("Window is now fullscreen\n"); }
-void window_close() { printf("Window is now closed\n"); }
-void window_resize() { printf("Window is now resize\n"); }
+void
+window_leave() {
+    printf("Window left\n");
+}
+void
+window_enter() {
+    printf("Window ENTER\n");
+}
+void
+window_fullscreen() {
+    printf("Window is now fullscreen\n");
+}
+void
+window_close() {
+    printf("Window is now closed\n");
+}
+void
+window_resize() {
+    printf("Window is now resize\n");
+}
 struct ORWindowListeners window_listeners = {
     .draw = draw_little_frame,
     .leave = window_leave,
@@ -111,34 +132,39 @@ struct ORWindowListeners window_listeners = {
 };
 
 // -- GAMEPAD EVENTS --------- //
-void button_press(uint8_t gamepad_id, enum ORGamepadButton button,
-                  uint16_t os_button, time_t time) {
+void
+button_press(uint8_t gamepad_id, enum ORGamepadButton button,
+             uint16_t os_button, time_t time) {
     printf("Gamepad ID [%i] has PRESSED button %i at %ld\n", gamepad_id, button,
            time);
 }
-void button_release(uint8_t gamepad_id, enum ORGamepadButton button,
-                    uint16_t os_button, time_t time) {
+void
+button_release(uint8_t gamepad_id, enum ORGamepadButton button,
+               uint16_t os_button, time_t time) {
     printf("Gamepad ID [%i] has RELEASE button %i at %ld\n", gamepad_id, button,
            time);
 }
 
-void gamepad_connect(uint8_t gamepad_id) {
+void
+gamepad_connect(uint8_t gamepad_id) {
     printf("Gamepad %i connected\n", gamepad_id);
 }
 
-void gamepad_disconnect(uint8_t gamepad_id) {
+void
+gamepad_disconnect(uint8_t gamepad_id) {
     printf("Gamepad %i disconnected\n", gamepad_id);
 }
 
-void gamepad_trigger_motion(uint8_t gamepad_id, enum ORGamepadTrigger trigger,
-                            float value, time_t time) {
+void
+gamepad_trigger_motion(uint8_t gamepad_id, enum ORGamepadTrigger trigger,
+                       float value, time_t time) {
     printf("Gamepad %i trigger %i at %ld with force %f\n", gamepad_id, trigger,
            time, value);
 }
 
-void gamepad_stick_motion(uint8_t gamepad_id, enum ORGamepadStick stick,
-                          enum ORGamepadStickAxis axis, float value,
-                          time_t time) {
+void
+gamepad_stick_motion(uint8_t gamepad_id, enum ORGamepadStick stick,
+                     enum ORGamepadStickAxis axis, float value, time_t time) {
     if (stick == OR_GAMEPAD_LEFT_STICK && axis == OR_AXIS_X) {
         x_stick_move = value * -10;
     }
@@ -156,7 +182,8 @@ struct ORGamepadListeners gamepad_listeners = {
     .disconnected = gamepad_disconnect,
 };
 
-int main() {
+int
+main() {
     printf("Starting window test from the main test file\n");
     struct ORArena *arena = arena_create_shared(500 * 1024 * 1024);
 

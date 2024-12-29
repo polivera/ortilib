@@ -35,7 +35,8 @@ struct ORArena {
  * @param initial_size Size in bytes for the arena's memory block
  * @return struct ORArena* Pointer to the new arena, or NULL if creation fails
  */
-struct ORArena *arena_create(size_t initial_size);
+struct ORArena *
+arena_create(size_t initial_size);
 
 /**
  * @brief Creates a new shared memory arena with the specified initial size
@@ -44,14 +45,16 @@ struct ORArena *arena_create(size_t initial_size);
  * @return struct ORArena* Pointer to the new shared arena, or NULL if creation
  * fails
  */
-struct ORArena *arena_create_shared(size_t initial_size);
+struct ORArena *
+arena_create_shared(size_t initial_size);
 
 /**
  * @brief Destroys an arena and frees all associated memory
  *
  * @param arena Pointer to the arena to destroy
  */
-void arena_destroy(struct ORArena *arena);
+void
+arena_destroy(struct ORArena *arena);
 
 /**
  * @brief Allocates memory from the arena with default alignment
@@ -60,7 +63,8 @@ void arena_destroy(struct ORArena *arena);
  * @param size Number of bytes to allocate
  * @return void* Pointer to the allocated memory, or NULL if allocation fails
  */
-void *arena_alloc(struct ORArena *arena, size_t size);
+void *
+arena_alloc(struct ORArena *arena, size_t size);
 
 /**
  * @brief Allocates memory from the arena with specified alignment
@@ -70,14 +74,16 @@ void *arena_alloc(struct ORArena *arena, size_t size);
  * @param alignment Required alignment in bytes (must be power of 2)
  * @return void* Pointer to the aligned memory, or NULL if allocation fails
  */
-void *arena_alloc_aligned(struct ORArena *arena, size_t size, size_t alignment);
+void *
+arena_alloc_aligned(struct ORArena *arena, size_t size, size_t alignment);
 
 /**
  * @brief Reverts the last allocation made in the arena
  *
  * @param arena Pointer to the arena
  */
-void arena_pop(struct ORArena *arena);
+void
+arena_pop(struct ORArena *arena);
 
 /**
  * @brief Resets the arena to its initial empty state
@@ -86,7 +92,8 @@ void arena_pop(struct ORArena *arena);
  *
  * @param arena Pointer to the arena
  */
-void arena_reset(struct ORArena *arena);
+void
+arena_reset(struct ORArena *arena);
 
 /**
  * @brief Creates a sub-arena within the specified parent arena
@@ -96,7 +103,8 @@ void arena_reset(struct ORArena *arena);
  * @return struct ORArena* Pointer to the new sub-arena, or NULL if creation
  * fails
  */
-struct ORArena *sub_arena_create(struct ORArena *arena, size_t initial_size);
+struct ORArena *
+sub_arena_create(struct ORArena *arena, size_t initial_size);
 
 /**
  * @brief Destroys a sub-arena
@@ -106,6 +114,7 @@ struct ORArena *sub_arena_create(struct ORArena *arena, size_t initial_size);
  *
  * @param sub_arena Pointer to the sub-arena to destroy
  */
-void sub_arena_destroy(const struct ORArena *sub_arena);
+void
+sub_arena_destroy(const struct ORArena *sub_arena);
 
 #endif // ORARENA_H
