@@ -5,6 +5,7 @@
 #ifndef WAYLAND_GAMEPAD_H
 #define WAYLAND_GAMEPAD_H
 
+#include "orwindow/orwindow_gamepad.h"
 #include "wayland_client.h"
 #include <linux/input.h>
 #include <stdbool.h>
@@ -31,7 +32,7 @@ void
 setup_gamepad(const struct InterWaylandClient *client);
 
 bool
-gamepad_set_rumble(int gamepad_id, float strong_magnitude,
+gamepad_set_rumble(enum ORGamepadID gamepad_id, float strong_magnitude,
                    float weak_magnitude);
 
 void

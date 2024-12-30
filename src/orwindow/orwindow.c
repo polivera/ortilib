@@ -62,7 +62,7 @@ or_toggle_fullscreen() {
 }
 
 bool
-or_gamepad_set_rumble(uint8_t gamepad_id, float strong_magnitude,
+or_gamepad_set_rumble(enum ORGamepadID gamepad_id, float strong_magnitude,
                       float weak_magnitude) {
     return inter_gamepad_set_rumble(gamepad_id, strong_magnitude,
                                     weak_magnitude);

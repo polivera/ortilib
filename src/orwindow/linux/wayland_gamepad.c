@@ -25,7 +25,7 @@
 
 struct GamepadThread {
     pthread_t thread;
-    int gamepad_id;
+    enum ORGamepadID gamepad_id;
     const bool *is_running;
     const struct ORGamepadListeners *listeners;
     struct ORArena *arena;
@@ -33,17 +33,26 @@ struct GamepadThread {
 
 static struct GamepadThread gamepad_threads[OR_MAX_GAMEPADS] = {0};
 static struct GamepadState gamepads[OR_MAX_GAMEPADS] = {0};
+static enum ORGamepadID gamepad_id_map[OR_MAX_GAMEPADS] = {0};
 static enum ORGamepadButton button_map[15] = {0};
 static enum ORGamepadStick sticks_and_triggers_map[6] = {0};
 static enum ORGamepadStickAxis sticks_axis[5] = {0};
 static uint16_t stick_deadzone = 2000;
 
 static void
+initialize_gamepad_id_map() {
+    gamepad_id_map[0] = OR_GAMEPAD_A;
+    gamepad_id_map[1] = OR_GAMEPAD_B;
+    gamepad_id_map[2] = OR_GAMEPAD_C;
+    gamepad_id_map[3] = OR_GAMEPAD_D;
+}
+
+static void
 initialize_sticks_axis() {
-    sticks_axis[0] = OR_AXIS_X;
-    sticks_axis[1] = OR_AXIS_Y;
-    sticks_axis[3] = OR_AXIS_X;
-    sticks_axis[4] = OR_AXIS_Y;
+    sticks_axis[0] = OR_GAMEPAD_AXIS_X;
+    sticks_axis[1] = OR_GAMEPAD_AXIS_Y;
+    sticks_axis[3] = OR_GAMEPAD_AXIS_X;
+    sticks_axis[4] = OR_GAMEPAD_AXIS_Y;
 }
 
 static void
@@ -58,17 +67,17 @@ initialize_sticks_and_triggers_map() {
 
 static void
 initialize_button_map() {
-    button_map[0] = OR_GAMEPAD_A;
-    button_map[1] = OR_GAMEPAD_B;
-    button_map[2] = OR_GAMEPAD_X;
-    button_map[3] = OR_GAMEPAD_Y;
-    button_map[4] = OR_GAMEPAD_LB;
-    button_map[5] = OR_GAMEPAD_RB;
-    button_map[6] = OR_GAMEPAD_SELECT;
-    button_map[7] = OR_GAMEPAD_START;
-    button_map[8] = OR_GAMEPAD_HOME;
-    button_map[9] = OR_GAMEPAD_L3;
-    button_map[10] = OR_GAMEPAD_R3;
+    button_map[0] = OR_GAMEPAD_BUTTON_A;
+    button_map[1] = OR_GAMEPAD_BUTTON_B;
+    button_map[2] = OR_GAMEPAD_BUTTON_X;
+    button_map[3] = OR_GAMEPAD_BUTTON_Y;
+    button_map[4] = OR_GAMEPAD_BUTTON_LB;
+    button_map[5] = OR_GAMEPAD_BUTTON_RB;
+    button_map[6] = OR_GAMEPAD_BUTTON_SELECT;
+    button_map[7] = OR_GAMEPAD_BUTTON_START;
+    button_map[8] = OR_GAMEPAD_BUTTON_HOME;
+    button_map[9] = OR_GAMEPAD_BUTTON_L3;
+    button_map[10] = OR_GAMEPAD_BUTTON_R3;
     button_map[11] = OR_GAMEPAD_DPAD_UP;
     button_map[12] = OR_GAMEPAD_DPAD_DOWN;
     button_map[13] = OR_GAMEPAD_DPAD_LEFT;
@@ -76,7 +85,8 @@ initialize_button_map() {
 }
 
 static void
-button_action(const int gamepad_id, const struct ORGamepadListeners *listeners,
+button_action(const enum ORGamepadID gamepad_id,
+              const struct ORGamepadListeners *listeners,
               const uint8_t button_number, const uint8_t os_button_number,
               const bool press) {
     if (press && listeners->button_press) {
@@ -91,11 +101,12 @@ button_action(const int gamepad_id, const struct ORGamepadListeners *listeners,
 }
 
 static void
-handle_button_event(const int gamepad_id, const struct js_event *event,
+handle_button_event(const enum ORGamepadID gamepad_id,
+                    const struct js_event *event,
                     const struct ORGamepadListeners *listeners) {
     if (event->number < 0 || event->number > 10) {
-        button_action(gamepad_id, listeners, OR_GAMEPAD_UNKNOWN, event->number,
-                      event->value > 0);
+        button_action(gamepad_id, listeners, OR_GAMEPAD_BUTTON_UNKNOWN,
+                      event->number, event->value > 0);
         return;
     }
     button_action(gamepad_id, listeners, button_map[event->number],
@@ -103,7 +114,8 @@ handle_button_event(const int gamepad_id, const struct js_event *event,
 }
 
 static void
-handle_dpad_event(const int gamepad_id, const struct js_event *event,
+handle_dpad_event(const enum ORGamepadID gamepad_id,
+                  const struct js_event *event,
                   const struct ORGamepadListeners *listeners) {
     if (event->number == UP_DOWN_DPAD_AXIS) {
         if (event->value > 0) {
@@ -150,7 +162,8 @@ handle_dpad_event(const int gamepad_id, const struct js_event *event,
 }
 
 static void
-handle_trigger_event(const int gamepad_id, const struct js_event *event,
+handle_trigger_event(const enum ORGamepadID gamepad_id,
+                     const struct js_event *event,
                      const struct ORGamepadListeners *listeners) {
     if (!listeners->trigger_motion)
         return;
@@ -162,7 +175,8 @@ handle_trigger_event(const int gamepad_id, const struct js_event *event,
 }
 
 static void
-handle_stick_event(const int gamepad_id, const struct js_event *event,
+handle_stick_event(const enum ORGamepadID gamepad_id,
+                   const struct js_event *event,
                    const struct ORGamepadListeners *listeners) {
     if (!listeners->stick_motion)
         return;
@@ -177,7 +191,8 @@ handle_stick_event(const int gamepad_id, const struct js_event *event,
 }
 
 static void
-handle_axis_event(const int gamepad_id, const struct js_event *event,
+handle_axis_event(const enum ORGamepadID gamepad_id,
+                  const struct js_event *event,
                   const struct ORGamepadListeners *listeners) {
     if (event->number == LEFT_TRIGGER_ID || event->number == RIGHT_TRIGGER_ID) {
         handle_trigger_event(gamepad_id, event, listeners);
@@ -192,7 +207,8 @@ handle_axis_event(const int gamepad_id, const struct js_event *event,
 }
 
 static void
-handle_gamepad_event(const int gamepad_id, const struct js_event *event,
+handle_gamepad_event(const enum ORGamepadID gamepad_id,
+                     const struct js_event *event,
                      const struct ORGamepadListeners *listeners) {
     switch (event->type) {
     case JS_EVENT_BUTTON:
@@ -205,7 +221,7 @@ handle_gamepad_event(const int gamepad_id, const struct js_event *event,
 }
 
 static void
-handle_controller_disconnected(const int gamepad_id,
+handle_controller_disconnected(const enum ORGamepadID gamepad_id,
                                const struct ORGamepadListeners *listeners) {
     gamepads[gamepad_id].is_connected = false;
     if (listeners->disconnected) {
@@ -214,8 +230,8 @@ handle_controller_disconnected(const int gamepad_id,
 }
 
 bool
-gamepad_set_rumble(const int gamepad_id, const float strong_magnitude,
-                   const float weak_magnitude) {
+gamepad_set_rumble(const enum ORGamepadID gamepad_id,
+                   const float strong_magnitude, const float weak_magnitude) {
     const struct GamepadState *gamepad = &gamepads[gamepad_id];
     if (gamepad->ff_fd < 0 ||
         !gamepad->ff_effect) // Check ff_fd instead of has_rumble
@@ -295,7 +311,7 @@ setup_gamepad_rumble(struct GamepadState *gamepad, struct ORArena *arena) {
 }
 
 static void
-handle_controller_connected(const int gamepad_id,
+handle_controller_connected(const enum ORGamepadID gamepad_id,
                             const struct ORGamepadListeners *listeners,
                             struct ORArena *arena) {
     struct GamepadState *gamepad = &gamepads[gamepad_id];
@@ -309,12 +325,6 @@ handle_controller_connected(const int gamepad_id,
         if (listeners->connected) {
             listeners->connected(gamepad_id);
         }
-    }
-
-    gamepads[gamepad_id].is_connected = true;
-    setup_gamepad_rumble(&gamepads[gamepad_id], arena);
-    if (listeners->connected) {
-        listeners->connected(gamepad_id);
     }
 }
 
@@ -361,9 +371,10 @@ setup_gamepad(const struct InterWaylandClient *client) {
     initialize_button_map();
     initialize_sticks_and_triggers_map();
     initialize_sticks_axis();
+    initialize_gamepad_id_map();
 
     for (int i = 0; i < OR_MAX_GAMEPADS; i++) {
-        gamepad_threads[i].gamepad_id = i;
+        gamepad_threads[i].gamepad_id = gamepad_id_map[i];
         gamepad_threads[i].is_running = &client->is_running;
         gamepad_threads[i].listeners = client->listeners->gamepad_listeners;
         gamepad_threads[i].arena = client->arena;

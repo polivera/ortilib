@@ -134,49 +134,50 @@ struct ORWindowListeners window_listeners = {
 
 // -- GAMEPAD EVENTS --------- //
 void
-button_press(uint8_t gamepad_id, enum ORGamepadButton button,
+button_press(enum ORGamepadID gamepad_id, enum ORGamepadButton button,
              uint16_t os_button, time_t time) {
-    if (button == OR_GAMEPAD_X) {
+    if (button == OR_GAMEPAD_BUTTON_X) {
         or_gamepad_set_rumble(gamepad_id, 0.5f, 0.25f);
     }
 
-    if (button == OR_GAMEPAD_B) {
+    if (button == OR_GAMEPAD_BUTTON_B) {
         or_gamepad_set_rumble(gamepad_id, 0.0f, 0.0f);
     }
     printf("Gamepad ID [%i] has PRESSED button %i at %ld\n", gamepad_id, button,
            time);
 }
 void
-button_release(uint8_t gamepad_id, enum ORGamepadButton button,
+button_release(enum ORGamepadID gamepad_id, enum ORGamepadButton button,
                uint16_t os_button, time_t time) {
     printf("Gamepad ID [%i] has RELEASE button %i at %ld\n", gamepad_id, button,
            time);
 }
 
 void
-gamepad_connect(uint8_t gamepad_id) {
+gamepad_connect(enum ORGamepadID gamepad_id) {
     printf("Gamepad %i connected\n", gamepad_id);
 }
 
 void
-gamepad_disconnect(uint8_t gamepad_id) {
+gamepad_disconnect(enum ORGamepadID gamepad_id) {
     printf("Gamepad %i disconnected\n", gamepad_id);
 }
 
 void
-gamepad_trigger_motion(uint8_t gamepad_id, enum ORGamepadTrigger trigger,
-                       float value, time_t time) {
+gamepad_trigger_motion(enum ORGamepadID gamepad_id,
+                       enum ORGamepadTrigger trigger, float value,
+                       time_t time) {
     printf("Gamepad %i trigger %i at %ld with force %f\n", gamepad_id, trigger,
            time, value);
 }
 
 void
-gamepad_stick_motion(uint8_t gamepad_id, enum ORGamepadStick stick,
+gamepad_stick_motion(enum ORGamepadID gamepad_id, enum ORGamepadStick stick,
                      enum ORGamepadStickAxis axis, float value, time_t time) {
-    if (stick == OR_GAMEPAD_LEFT_STICK && axis == OR_AXIS_X) {
+    if (stick == OR_GAMEPAD_LEFT_STICK && axis == OR_GAMEPAD_AXIS_X) {
         x_stick_move = value * -10;
     }
-    if (stick == OR_GAMEPAD_LEFT_STICK && axis == OR_AXIS_Y) {
+    if (stick == OR_GAMEPAD_LEFT_STICK && axis == OR_GAMEPAD_AXIS_Y) {
         y_stick_move = value * -10;
     }
 }
