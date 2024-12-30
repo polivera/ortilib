@@ -22,7 +22,7 @@ enum ORPointerButton {
 struct ORPointerListeners {
     /**
      * Called when the pointer enters the window area.
-     *
+     * Coordinates are relative to the surface.
      * @param point_x X coordinate of the pointer when entering.
      * @param point_y Y coordinate of the pointer when entering.
      */
@@ -35,7 +35,7 @@ struct ORPointerListeners {
 
     /**
      * Called when the pointer moves within the window area.
-     *
+     * Coordinates are relative to the surface.
      * @param point_x Current X coordinate of the pointer.
      * @param point_y Current Y coordinate of the pointer.
      */

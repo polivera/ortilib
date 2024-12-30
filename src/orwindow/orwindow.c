@@ -12,8 +12,9 @@ struct ORArena *arena;
 struct ORBitmap *bitmap;
 struct InterListeners listeners;
 
-void or_bitmap_reset(struct ORBitmap *bmp, const uint16_t width,
-                     const uint16_t height) {
+void
+or_bitmap_reset(struct ORBitmap *bmp, const uint16_t width,
+                const uint16_t height) {
     bmp->mem = NULL;
     bmp->width = width;
     bmp->height = height;
@@ -21,10 +22,10 @@ void or_bitmap_reset(struct ORBitmap *bmp, const uint16_t width,
     bmp->stride = width * 4;
 }
 
-enum ORWindowError or_create_window(const uint16_t width, const uint16_t height,
-                                    const char *window_name,
-                                    const char *process_name,
-                                    struct ORArena *extern_arena) {
+enum ORWindowError
+or_create_window(const uint16_t width, const uint16_t height,
+                 const char *window_name, const char *process_name,
+                 struct ORArena *extern_arena) {
     arena = extern_arena;
     if (arena == NULL) {
         arena = arena_create_shared(100 * 1024 * 1024);
@@ -41,15 +42,33 @@ enum ORWindowError or_create_window(const uint16_t width, const uint16_t height,
 enum ORWindowError
 or_surface_setup(struct ORWindowListeners *window_listeners,
                  struct ORKeyboardListeners *keyboard_listeners,
-                 struct ORPointerListeners *pointer_listeners) {
+                 struct ORPointerListeners *pointer_listeners,
+                 struct ORGamepadListeners *gamepad_listeners) {
     listeners.window_listeners = window_listeners;
     listeners.keyboard_listeners = keyboard_listeners;
     listeners.pointer_listeners = pointer_listeners;
+    listeners.gamepad_listeners = gamepad_listeners;
     return inter_surface_setup(bitmap, &listeners);
 }
 
-enum ORWindowError or_start_main_loop() { return inter_start_drawing(); }
+enum ORWindowError
+or_start_main_loop() {
+    return inter_start_drawing();
+}
 
-enum ORWindowError or_toggle_fullscreen() { return inter_toggle_fullscreen(); }
+enum ORWindowError
+or_toggle_fullscreen() {
+    return inter_toggle_fullscreen();
+}
 
-void or_destroy_window() { return inter_remove_window(arena); }
+bool
+or_gamepad_set_rumble(enum ORGamepadID gamepad_id, float strong_magnitude,
+                      float weak_magnitude) {
+    return inter_gamepad_set_rumble(gamepad_id, strong_magnitude,
+                                    weak_magnitude);
+}
+
+void
+or_destroy_window() {
+    return inter_remove_window(arena);
+}

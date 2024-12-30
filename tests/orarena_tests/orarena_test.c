@@ -8,7 +8,8 @@
 #include <stdio.h>
 
 // Test cases
-void test_valid_creation() {
+void
+test_valid_creation() {
     const size_t initial_size = 1024;
     struct ORArena *arena = arena_create(initial_size);
 
@@ -28,7 +29,8 @@ void test_valid_creation() {
 }
 
 // Test cases
-void test_valid_shared_creation() {
+void
+test_valid_shared_creation() {
     const size_t initial_size = 1024;
     struct ORArena *arena = arena_create_shared(initial_size);
 
@@ -47,13 +49,15 @@ void test_valid_shared_creation() {
     printf("✓ test_valid_shared_creation passed\n");
 }
 
-void test_zero_size() {
+void
+test_zero_size() {
     const struct ORArena *arena = arena_create(0);
     assert(arena == NULL);
     printf("✓ test_zero_size passed\n");
 }
 
-void test_minimum_size() {
+void
+test_minimum_size() {
     const size_t min_size = 1;
     struct ORArena *arena = arena_create(min_size);
 
@@ -67,7 +71,8 @@ void test_minimum_size() {
     printf("✓ test_minimum_size passed\n");
 }
 
-void test_arena_basic_allocation() {
+void
+test_arena_basic_allocation() {
     // Create an arena with 1024 bytes
     struct ORArena *arena = arena_create(1024);
     assert(arena != NULL);
@@ -91,7 +96,8 @@ void test_arena_basic_allocation() {
     printf("✓ Basic allocation tests passed!\n");
 }
 
-void test_arena_aligned_allocation() {
+void
+test_arena_aligned_allocation() {
     struct ORArena *arena = arena_create(1024);
     assert(arena != NULL);
 
@@ -111,7 +117,8 @@ void test_arena_aligned_allocation() {
     printf("✓ Aligned allocation tests passed!\n");
 }
 
-void test_arena_boundaries() {
+void
+test_arena_boundaries() {
     // Test with a small arena to check boundary conditions
     struct ORArena *arena = arena_create(64);
     assert(arena != NULL);
@@ -132,7 +139,8 @@ void test_arena_boundaries() {
     printf("✓ Boundary tests passed!\n");
 }
 
-void test_sub_arena_creation() {
+void
+test_sub_arena_creation() {
     // Create a parent arena with 1024 bytes
     struct ORArena *parent_arena = arena_create(1024);
     assert(parent_arena != NULL);
@@ -171,7 +179,8 @@ void test_sub_arena_creation() {
     printf("✓ Sub-arena creation tests passed!\n");
 }
 
-void test_sub_arena_memory_isolation() {
+void
+test_sub_arena_memory_isolation() {
     struct ORArena *parent_arena = arena_create(1024);
     assert(parent_arena != NULL);
 
@@ -204,7 +213,8 @@ void test_sub_arena_memory_isolation() {
     printf("✓ Sub-arena memory isolation tests passed!\n");
 }
 
-void test_arena_pop() {
+void
+test_arena_pop() {
     struct ORArena *arena = arena_create(1024);
     assert(arena != NULL);
 
@@ -234,7 +244,8 @@ void test_arena_pop() {
     printf("✓ Arena pop tests passed!\n");
 }
 
-void test_arena_reset() {
+void
+test_arena_reset() {
     struct ORArena *arena = arena_create(1024);
     assert(arena != NULL);
 
@@ -261,7 +272,8 @@ void test_arena_reset() {
     printf("✓ Arena reset tests passed!\n");
 }
 
-void test_sub_arena_pop_protection() {
+void
+test_sub_arena_pop_protection() {
     struct ORArena *parent_arena = arena_create(1024);
     assert(parent_arena != NULL);
     // Record the previous size before sub-arena creation
@@ -283,7 +295,8 @@ void test_sub_arena_pop_protection() {
 }
 
 // Main test runner
-int main() {
+int
+main() {
     printf("Running arena creation tests...\n");
     test_valid_creation();
     test_valid_shared_creation();

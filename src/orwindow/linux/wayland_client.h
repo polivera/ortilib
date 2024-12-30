@@ -27,21 +27,26 @@ struct InterWaylandClient {
     struct InterDecoration *libdecor;
     struct InterListeners *listeners;
     struct ORArena *arena;
+    bool is_running;
 };
 
-struct InterWaylandClient *inter_get_wayland_client(const char *window_name,
-                                                    struct ORArena *arena);
+struct InterWaylandClient *
+inter_get_wayland_client(const char *window_name, struct ORArena *arena);
 
-void inter_frame_render(const struct InterWaylandClient *wlclient);
+void
+inter_frame_render(const struct InterWaylandClient *wlclient);
 
 enum ORWindowError
 inter_wl_window_resize(const struct InterWaylandClient *wlclient);
 
-enum ORWindowError inter_wl_window_setup(struct ORBitmap *bitmap,
-                                         struct InterWaylandClient *wlclient);
+enum ORWindowError
+inter_wl_window_setup(struct ORBitmap *bitmap,
+                      struct InterWaylandClient *wlclient);
 
-void inter_wl_free_window(struct InterWaylandClient *wlclient);
+void
+inter_wl_free_window(struct InterWaylandClient *wlclient);
 
-enum ORWindowError inter_wl_start_drawing(struct InterWaylandClient *wlclient);
+enum ORWindowError
+inter_wl_start_drawing(struct InterWaylandClient *wlclient);
 
 #endif // ORTILIB_SRC_ORWINDOW_LINUX_WAYLAND_CLIENT_H

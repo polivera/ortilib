@@ -8,8 +8,9 @@
 #include "orwindow/orwindow.h"
 #include "wayland_client.h"
 
-void setup_keyboard(const struct ORWindowListeners *win_listeners,
-                    const struct ORKeyboardListeners *key_listeners,
-                    struct InterWayland *wayland);
+void
+setup_keyboard(const struct ORWindowListeners *win_listeners,
+               const struct ORKeyboardListeners *key_listeners,
+               struct InterWayland *wayland);
 
 #endif // WAYLAND_KEYBOARD_H

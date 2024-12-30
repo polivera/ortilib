@@ -21,8 +21,9 @@
 #define OR_LOG_DESTROY(arena)
 #endif
 
-static void int_or_log_alloc(const struct ORArena *arena, const size_t size,
-                             const size_t aligned) {
+static void
+int_or_log_alloc(const struct ORArena *arena, const size_t size,
+                 const size_t aligned) {
     if (arena->parent == NULL) {
         printf("[ORArena %p] Allocating %zu bytes (aligned: %zu). Used %zu\n",
                (const void *)arena, size, aligned, arena->used_size);
@@ -32,7 +33,8 @@ static void int_or_log_alloc(const struct ORArena *arena, const size_t size,
             (const void *)arena, size, aligned, arena->used_size);
     }
 }
-static void int_or_log_reset(const struct ORArena *arena) {
+static void
+int_or_log_reset(const struct ORArena *arena) {
     if (arena->parent == NULL) {
         printf("[ORArena %p] Reset (previous used: %zu)\n", (const void *)arena,
                arena->used_size);
@@ -41,7 +43,8 @@ static void int_or_log_reset(const struct ORArena *arena) {
                (const void *)arena, arena->used_size);
     }
 }
-static void int_or_log_create(const struct ORArena *arena, const size_t size) {
+static void
+int_or_log_create(const struct ORArena *arena, const size_t size) {
     if (arena->parent == NULL) {
         printf("[ORArena %p] Created with size %zu\n", (const void *)arena,
                size);
@@ -50,7 +53,8 @@ static void int_or_log_create(const struct ORArena *arena, const size_t size) {
                size);
     }
 }
-static void int_or_log_destroy(const struct ORArena *arena) {
+static void
+int_or_log_destroy(const struct ORArena *arena) {
     if (arena->parent == NULL) {
         printf("[ORArena %p] Destroyed (final used: %zu/%zu)\n",
                (const void *)arena, arena->used_size, arena->total_size);
@@ -60,12 +64,13 @@ static void int_or_log_destroy(const struct ORArena *arena) {
     }
 }
 
-static size_t align_up(const size_t size, const size_t alignment) {
+static size_t
+align_up(const size_t size, const size_t alignment) {
     return (size + alignment - 1) & ~(alignment - 1);
 }
 
-static struct ORArena *inter_arena_create(const size_t initial_size,
-                                          const bool is_shared) {
+static struct ORArena *
+inter_arena_create(const size_t initial_size, const bool is_shared) {
     const size_t arena_struct_size = sizeof(struct ORArena);
     if (initial_size <= 0) {
         fprintf(stderr, "ORArena: Initial size is invalid.\n");
@@ -96,16 +101,19 @@ static struct ORArena *inter_arena_create(const size_t initial_size,
     return arena;
 }
 
-struct ORArena *arena_create(const size_t initial_size) {
+struct ORArena *
+arena_create(const size_t initial_size) {
     struct ORArena *arena = inter_arena_create(initial_size, false);
     return arena;
 }
 
-struct ORArena *arena_create_shared(const size_t initial_size) {
+struct ORArena *
+arena_create_shared(const size_t initial_size) {
     return inter_arena_create(initial_size, true);
 }
 
-void arena_destroy(struct ORArena *arena) {
+void
+arena_destroy(struct ORArena *arena) {
     if (arena->parent != NULL) {
         sub_arena_destroy(arena);
         return;
@@ -117,8 +125,9 @@ void arena_destroy(struct ORArena *arena) {
     OR_LOG_DESTROY(arena);
 }
 
-void *arena_alloc_aligned(struct ORArena *arena, const size_t size,
-                          const size_t alignment) {
+void *
+arena_alloc_aligned(struct ORArena *arena, const size_t size,
+                    const size_t alignment) {
     if (alignment > MAX_ALIGNMENT) {
         fprintf(stderr, "Max alignment exceeded\n");
         return NULL;
@@ -136,21 +145,24 @@ void *arena_alloc_aligned(struct ORArena *arena, const size_t size,
     return arena->memory + aligned_start;
 }
 
-void *arena_alloc(struct ORArena *arena, const size_t size) {
+void *
+arena_alloc(struct ORArena *arena, const size_t size) {
     return arena_alloc_aligned(arena, size, DEFAULT_ALIGNMENT);
 }
 
-void arena_pop(struct ORArena *arena) {
+void
+arena_pop(struct ORArena *arena) {
     arena->used_size = arena->previous_size;
 }
 
-void arena_reset(struct ORArena *arena) {
+void
+arena_reset(struct ORArena *arena) {
     OR_LOG_RESET(arena);
     arena->used_size = 0;
 }
 
-struct ORArena *sub_arena_create(struct ORArena *arena,
-                                 const size_t initial_size) {
+struct ORArena *
+sub_arena_create(struct ORArena *arena, const size_t initial_size) {
     if (initial_size <= 0) {
         fprintf(stderr, "ORSubArena: Initial size is invalid.\n");
         return NULL;
@@ -170,7 +182,8 @@ struct ORArena *sub_arena_create(struct ORArena *arena,
     return sub_arena;
 }
 
-void sub_arena_destroy(const struct ORArena *sub_arena) {
+void
+sub_arena_destroy(const struct ORArena *sub_arena) {
     OR_LOG_DESTROY(sub_arena);
     memset((void *)sub_arena, 0,
            sub_arena->total_size + sizeof(struct ORArena));
