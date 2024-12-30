@@ -74,7 +74,7 @@ inter_draw(const struct ORBitmap *bitmap,
         window_listeners->draw(bitmap);
         return;
     }
-    memset(bitmap->mem, 250, bitmap->mem_size);
+    memset(bitmap->mem, 255, bitmap->mem_size);
 }
 
 // Renders a frame on the Wayland client
@@ -246,19 +246,23 @@ inter_wl_start_drawing(struct InterWaylandClient *wlclient) {
 
 void
 inter_wl_free_window(struct InterWaylandClient *wlclient) {
-    if (wlclient != NULL && wlclient->wayland != NULL) {
-        if (wlclient->wayland->buffer) {
-            wl_buffer_destroy(wlclient->wayland->buffer);
-            wlclient->wayland->buffer = NULL;
+    if (wlclient != NULL) {
+        wlclient->is_running = false;
+        if (wlclient->wayland != NULL) {
+            if (wlclient->wayland->buffer) {
+                wl_buffer_destroy(wlclient->wayland->buffer);
+                wlclient->wayland->buffer = NULL;
+            }
+            if (wlclient->wayland->surface) {
+                wl_surface_destroy(wlclient->wayland->surface);
+                wlclient->wayland->surface = NULL;
+            }
+            if (wlclient->wayland->display) {
+                wl_display_disconnect(wlclient->wayland->display);
+                wlclient->wayland->display = NULL;
+            }
+            wlclient->wayland = NULL;
         }
-        if (wlclient->wayland->surface) {
-            wl_surface_destroy(wlclient->wayland->surface);
-            wlclient->wayland->surface = NULL;
-        }
-        if (wlclient->wayland->display) {
-            wl_display_disconnect(wlclient->wayland->display);
-            wlclient->wayland->display = NULL;
-        }
-        wlclient->wayland = NULL;
     }
+    cleanup_gamepads();
 }

@@ -36,6 +36,6 @@ gamepad_set_rumble(enum ORGamepadID gamepad_id, float strong_magnitude,
                    float weak_magnitude);
 
 void
-cleanup_gamepad(void);
+cleanup_gamepads(void);
 
 #endif // WAYLAND_GAMEPAD_H

@@ -315,7 +315,6 @@ handle_controller_connected(const enum ORGamepadID gamepad_id,
                             const struct ORGamepadListeners *listeners,
                             struct ORArena *arena) {
     struct GamepadState *gamepad = &gamepads[gamepad_id];
-
     // Get the device ID
     struct stat js_stat;
     if (fstat(gamepad->fd, &js_stat) != -1) {
@@ -388,7 +387,7 @@ setup_gamepad(const struct InterWaylandClient *client) {
 }
 
 void
-cleanup_gamepad(void) {
+cleanup_gamepads(void) {
     for (int i = 0; i < OR_MAX_GAMEPADS; i++) {
         pthread_join(gamepad_threads[i].thread, NULL);
         if (gamepads[i].is_connected) {

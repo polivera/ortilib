@@ -62,6 +62,6 @@ inter_gamepad_set_rumble(uint8_t gamepad_id, float strong_magnitude,
 void
 inter_remove_window(struct ORArena *arena) {
     // TODO: check if wayland or X11
-    wlclient->is_running = false;
+    inter_wl_free_window(wlclient);
     arena_destroy(arena);
 }
