@@ -37,29 +37,30 @@ draw_little_frame(const struct ORBitmap *bitmap) {
     }
 
     uint8_t speed = 4;
-    if (is_key_pressed[KEY_LSHIFT] == 1 || is_key_pressed[KEY_RSHIFT] == 1) {
+    if (is_key_pressed[OR_KEY_LSHIFT] == 1 ||
+        is_key_pressed[OR_KEY_RSHIFT] == 1) {
         speed = 8;
     }
-    if (is_key_pressed[KEY_Q] == 1) {
+    if (is_key_pressed[OR_KEY_Q] == 1) {
         x_offset += speed;
         y_offset += speed;
         return;
     }
-    if (is_key_pressed[KEY_E] == 1) {
+    if (is_key_pressed[OR_KEY_E] == 1) {
         x_offset -= speed;
         y_offset += speed;
         return;
     }
-    if (is_key_pressed[KEY_A] == 1) {
+    if (is_key_pressed[OR_KEY_A] == 1) {
         x_offset += speed;
     }
-    if (is_key_pressed[KEY_W] == 1) {
+    if (is_key_pressed[OR_KEY_W] == 1) {
         y_offset += speed;
     }
-    if (is_key_pressed[KEY_D] == 1) {
+    if (is_key_pressed[OR_KEY_D] == 1) {
         x_offset -= speed;
     }
-    if (is_key_pressed[KEY_S] == 1) {
+    if (is_key_pressed[OR_KEY_S] == 1) {
         y_offset -= speed;
     }
 }
@@ -68,7 +69,7 @@ draw_little_frame(const struct ORBitmap *bitmap) {
 void
 key_press(enum ORKeys code, uint8_t os_code, time_t time, uint8_t mod) {
     is_key_pressed[code] = 1;
-    if (code == KEY_F11) {
+    if (code == OR_KEY_F11) {
         or_toggle_fullscreen();
     }
 }
@@ -136,7 +137,7 @@ void
 button_press(uint8_t gamepad_id, enum ORGamepadButton button,
              uint16_t os_button, time_t time) {
     if (button == OR_GAMEPAD_X) {
-        or_gamepad_set_rumble(gamepad_id, 0.0f, 0.25f);
+        or_gamepad_set_rumble(gamepad_id, 0.5f, 0.25f);
     }
 
     if (button == OR_GAMEPAD_B) {

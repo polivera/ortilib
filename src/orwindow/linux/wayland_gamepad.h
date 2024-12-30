@@ -5,27 +5,26 @@
 #ifndef WAYLAND_GAMEPAD_H
 #define WAYLAND_GAMEPAD_H
 
-#include "orwindow/orwindow_gamepad.h"
 #include "wayland_client.h"
+#include <linux/input.h>
 #include <stdbool.h>
-#include <stdint.h>
 
-// Maximum number of gamepads that can be connected simultaneously
 #define GAMEPAD_PATH_FORMAT "/dev/input/js%d"
 #define GAMEPAD_EVENT_PATH_FORMAT "/dev/input/event%d"
 
 // Gamepad state structure
+// TODO: Is gamepad state still a good name for this?
 struct GamepadState {
-    int fd;                 // File descriptor for the gamepad
-    bool is_connected;      // Whether the gamepad is currently connected
-    short axes[8];          // Raw axes values
-    uint16_t button_states; // Bitmap of current button states
+    int fd;
+    // Device ID
+    dev_t device_id;
+    bool is_connected;
+    // Dpad state
     bool dpad_down_pressed;
     bool dpad_right_pressed;
-
-    int ff_fd;       // Force feedback file descriptor
-    short effect_id; // Effect ID for strong rumble
-    bool has_rumble; // Whether the device supports rumble
+    // Force Feedback;
+    int ff_fd;
+    struct ff_effect *ff_effect;
 };
 
 void

@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #define LEFT_TRIGGER_ID 2
@@ -24,9 +25,10 @@
 
 struct GamepadThread {
     pthread_t thread;
-    const bool *is_running;
     int gamepad_id;
+    const bool *is_running;
     const struct ORGamepadListeners *listeners;
+    struct ORArena *arena;
 };
 
 static struct GamepadThread gamepad_threads[OR_MAX_GAMEPADS] = {0};
@@ -199,22 +201,6 @@ handle_gamepad_event(const int gamepad_id, const struct js_event *event,
     case JS_EVENT_AXIS:
         handle_axis_event(gamepad_id, event, listeners);
         break;
-    case JS_EVENT_INIT:
-        printf("initializing gamepad id: %i\n", gamepad_id);
-        break;
-    default:
-        printf("unknown joystick event type=%i value=%i number=%i \n",
-               event->type, event->value, event->number);
-        break;
-    }
-}
-
-static void
-handle_controller_connected(const int gamepad_id,
-                            const struct ORGamepadListeners *listeners) {
-    gamepads[gamepad_id].is_connected = true;
-    if (listeners->connected) {
-        listeners->connected(gamepad_id);
     }
 }
 
@@ -230,27 +216,22 @@ handle_controller_disconnected(const int gamepad_id,
 bool
 gamepad_set_rumble(const int gamepad_id, const float strong_magnitude,
                    const float weak_magnitude) {
-    struct GamepadState *gamepad = &gamepads[gamepad_id];
-    if (!gamepad->has_rumble)
+    const struct GamepadState *gamepad = &gamepads[gamepad_id];
+    if (gamepad->ff_fd < 0 ||
+        !gamepad->ff_effect) // Check ff_fd instead of has_rumble
         return false;
 
-    struct ff_effect effect;
-    struct input_event play;
+    gamepad->ff_effect->u.rumble.strong_magnitude =
+        (uint16_t)(strong_magnitude * 0xFFFF);
+    gamepad->ff_effect->u.rumble.weak_magnitude =
+        (uint16_t)(weak_magnitude * 0xFFFF);
 
-    // Update strong rumble
-    memset(&effect, 0, sizeof(effect));
-    effect.type = FF_RUMBLE;
-    effect.id = gamepad->effect_id;
-    effect.u.rumble.strong_magnitude = (uint16_t)(strong_magnitude * 0xFFFF);
-    effect.u.rumble.weak_magnitude = (uint16_t)(weak_magnitude * 0xFFFF);
-
-    if (ioctl(gamepad->ff_fd, EVIOCSFF, &effect) < 0)
+    if (ioctl(gamepad->ff_fd, EVIOCSFF, gamepad->ff_effect) < 0)
         return false;
 
-    // Play strong effect
-    play.type = EV_FF;
-    play.code = effect.id;
-    play.value = 1;
+    const struct input_event play = {
+        .type = EV_FF, .code = gamepad->ff_effect->id, .value = 1};
+
     if (write(gamepad->ff_fd, &play, sizeof(play)) < 0)
         return false;
 
@@ -258,45 +239,82 @@ gamepad_set_rumble(const int gamepad_id, const float strong_magnitude,
 }
 
 void
-setup_gamepad_rumble(struct GamepadState *gamepad) {
+setup_gamepad_rumble(struct GamepadState *gamepad, struct ORArena *arena) {
+    gamepad->ff_fd = -1;
+
     for (int i = 0; i < 32; i++) {
         char event_path[64];
         snprintf(event_path, sizeof(event_path), "/dev/input/event%d", i);
+
+        struct stat event_stat;
+        if (stat(event_path, &event_stat) == -1) {
+            continue;
+        }
+
+        // Check if event device id matches joystick device id
+        /**
+         * Shifting 8 bits to check only for major part of the ids.
+         * The IDs are compose by a major number and a minor number.
+         * Event and joystic ids share the same major part but have different
+         * minor part.
+         */
+        if (gamepad->device_id >> 8 != event_stat.st_rdev >> 8) {
+            continue;
+        }
+
         const int fd = open(event_path, O_RDWR);
         if (fd < 0)
             continue;
 
-        // Check if this is the right device
-        unsigned long features[4];
-        // TODO: wtf this line do?
+        // This check if we can query the device for capabilities.
+        ulong features[4];
         if (ioctl(fd, EVIOCGBIT(0, sizeof(features)), features) < 0) {
             close(fd);
             continue;
         }
 
-        // Check if device supports force feedback
-        if (features[0] & (1 << EV_FF)) {
-            gamepad->ff_fd = fd;
-            gamepad->has_rumble = true;
-
-            // Upload effects
-            struct ff_effect effect = {0};
-
-            // Setup strong rumble effect
-            effect.type = FF_RUMBLE;
-            effect.id = -1;
-            effect.u.rumble.strong_magnitude = 0;
-            effect.u.rumble.weak_magnitude = 0;
-
-            if (ioctl(fd, EVIOCSFF, &effect) < 0) {
-                gamepad->has_rumble = false;
+        // Check if device supports force feedback. If so, set up the event
+        if (features[0] & 1 << EV_FF) {
+            gamepad->ff_effect = arena_alloc(arena, sizeof(struct ff_effect));
+            gamepad->ff_effect->type = FF_RUMBLE;
+            gamepad->ff_effect->id = -1;
+            gamepad->ff_effect->u.rumble.strong_magnitude = 0;
+            gamepad->ff_effect->u.rumble.weak_magnitude = 0;
+            // ioctl will update gamepad->ff_effect inner values.
+            if (ioctl(fd, EVIOCSFF, gamepad->ff_effect) < 0) {
+                // NOTE: Need arena to handle threads in order to dealloc here
+                gamepad->ff_effect = NULL;
                 close(fd);
                 continue;
             }
-            gamepad->effect_id = effect.id;
+            gamepad->ff_fd = fd;
             break;
         }
         close(fd);
+    }
+}
+
+static void
+handle_controller_connected(const int gamepad_id,
+                            const struct ORGamepadListeners *listeners,
+                            struct ORArena *arena) {
+    struct GamepadState *gamepad = &gamepads[gamepad_id];
+
+    // Get the device ID
+    struct stat js_stat;
+    if (fstat(gamepad->fd, &js_stat) != -1) {
+        gamepad->device_id = js_stat.st_rdev;
+        gamepad->is_connected = true;
+        setup_gamepad_rumble(gamepad, arena);
+        if (listeners->connected) {
+            listeners->connected(gamepad_id);
+        }
+    }
+
+    gamepads[gamepad_id].is_connected = true;
+    setup_gamepad_rumble(&gamepads[gamepad_id], arena);
+    if (listeners->connected) {
+        listeners->connected(gamepad_id);
     }
 }
 
@@ -314,9 +332,9 @@ single_gamepad_thread(void *arg) {
             gamepads[thread_data->gamepad_id].fd =
                 open(device_path, O_RDONLY | O_NONBLOCK);
             if (gamepads[thread_data->gamepad_id].fd != -1) {
-                setup_gamepad_rumble(&gamepads[thread_data->gamepad_id]);
                 handle_controller_connected(thread_data->gamepad_id,
-                                            thread_data->listeners);
+                                            thread_data->listeners,
+                                            thread_data->arena);
             }
         }
 
@@ -326,7 +344,6 @@ single_gamepad_thread(void *arg) {
                 handle_gamepad_event(thread_data->gamepad_id, &event,
                                      thread_data->listeners);
             }
-
             if (errno == ENODEV) {
                 close(gamepads[thread_data->gamepad_id].fd);
                 handle_controller_disconnected(thread_data->gamepad_id,
@@ -349,6 +366,7 @@ setup_gamepad(const struct InterWaylandClient *client) {
         gamepad_threads[i].gamepad_id = i;
         gamepad_threads[i].is_running = &client->is_running;
         gamepad_threads[i].listeners = client->listeners->gamepad_listeners;
+        gamepad_threads[i].arena = client->arena;
 
         if (pthread_create(&gamepad_threads[i].thread, NULL,
                            single_gamepad_thread, &gamepad_threads[i]) != 0) {
@@ -362,7 +380,6 @@ void
 cleanup_gamepad(void) {
     for (int i = 0; i < OR_MAX_GAMEPADS; i++) {
         pthread_join(gamepad_threads[i].thread, NULL);
-
         if (gamepads[i].is_connected) {
             close(gamepads[i].fd);
             gamepads[i].is_connected = false;
