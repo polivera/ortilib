@@ -18,5 +18,6 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_subdirectory(src/orwindow)
 add_subdirectory(src/orarena)
+add_subdirectory(src/orsound)
 add_subdirectory(tests)
 
