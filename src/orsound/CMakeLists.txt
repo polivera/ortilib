@@ -31,7 +31,6 @@ endif ()
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(PIPEWIRE REQUIRED libpipewire-0.3>=0.3)
-pkg_check_modules(SPA REQUIRED libspa-0.2>=0.2)
 
 # Specify where to find headers
 target_include_directories(orsound
@@ -40,14 +39,13 @@ target_include_directories(orsound
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${PIPEWIRE_INCLUDE_DIRS}
-        ${SPA_INCLUDE_DIRS}
 )
 
 # Link against wayland-client and decor libraries
 target_link_libraries(orsound
         PRIVATE
         pipewire-0.3
-        spa-0.2
+        m # Math library
 )
 
 install(TARGETS orsound

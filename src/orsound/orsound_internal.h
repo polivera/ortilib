@@ -13,6 +13,6 @@ inter_play_tone(double frequency, double amplitude,
 
 void
 inter_play_custom_tone(double frequency, double amplitude, double duration,
-                       or_wave_generator wave_function);
+                       or_phase_generator wave_function);
 
 #endif // ORSOUND_INTERNAL_H

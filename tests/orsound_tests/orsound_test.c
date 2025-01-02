@@ -14,6 +14,6 @@ my_generator(double phase) {
 
 int
 main() {
-    play_tone_custom(2.4, 3.4, 2.2, my_generator);
+    play_tone(261.63, 0.5, OR_WT_NONE, 1.0);
     return 0;
 }

@@ -13,10 +13,10 @@ void
 play_tone(double frequency, double amplitude, enum ORSoundWaveType wave_type,
           double duration);
 
-typedef double (*or_wave_generator)(double phase);
+typedef double (*or_phase_generator)(double phase);
 
 void
 play_tone_custom(double frequency, double amplitude, double duration,
-                 or_wave_generator wave_function);
+                 or_phase_generator wave_function);
 
 #endif // ORSOUND_H
