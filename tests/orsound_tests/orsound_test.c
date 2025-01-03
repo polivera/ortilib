@@ -14,6 +14,11 @@ my_generator(double phase) {
 
 int
 main() {
-    play_tone(261.63, 0.5, OR_WT_NONE, 1.0);
-    return 0;
+    struct ORArena *arena = arena_create(1024 * 1024);
+    const struct ORSoundConfig sound_config = {.sample_rate = 44100,
+                                               .buffer_size = 1024,
+                                               .priority = OR_ROLE_BACKGROUND,
+                                               .format = OR_FORMAT_S16};
+
+    or_system_init(&sound_config, arena);
 }

@@ -6,6 +6,8 @@
 #include <math.h>
 #include <pipewire/pipewire.h>
 #include <spa/param/audio/format-utils.h>
+#include <stdint.h>
+#include <stdio.h>
 
 // If this is made configurable at some point it should be between
 // 44100 and 48000
@@ -15,7 +17,7 @@
 struct sound_data {
     struct pw_main_loop *loop;
     struct pw_stream *stream;
-    or_phase_generator phase_generator;
+    or_wave_generator wave_generator;
     double phase;
     double frequency;
     double amplitude;
@@ -40,7 +42,7 @@ on_process(void *data) {
     // Generate samples
     for (uint32_t i = 0; i < needed_samples; i++) {
         ptr_sample_writer[i] =
-            user_data->amplitude * user_data->phase_generator(user_data->phase);
+            user_data->amplitude * user_data->wave_generator(user_data->phase);
         user_data->phase += 2.0 * M_PI * user_data->frequency / SAMPLE_RATE;
         // Wraps the phase around when it exceeds 2π to prevent floating-point
         // errors from accumulating
@@ -121,7 +123,7 @@ inter_pw_play_tone(double frequency, double amplitude,
 
     data.frequency = frequency;
     data.amplitude = amplitude;
-    data.phase_generator = composite_wave;
+    data.wave_generator = composite_wave;
 
     pw_init(NULL, NULL);
 

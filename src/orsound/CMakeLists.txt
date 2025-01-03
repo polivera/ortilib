@@ -44,6 +44,7 @@ target_include_directories(orsound
 # Link against wayland-client and decor libraries
 target_link_libraries(orsound
         PRIVATE
+        orarena
         pipewire-0.3
         m # Math library
 )

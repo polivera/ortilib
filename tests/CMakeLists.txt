@@ -51,11 +51,11 @@ target_include_directories(orarena_test
         ${CMAKE_SOURCE_DIR}/include
 )
 
-target_link_libraries(orwindow_test PRIVATE orwindow orarena)
-add_test(NAME orwindow_test COMMAND orwindow_test)
-
 target_link_libraries(orarena_test PRIVATE orarena)
 add_test(NAME orarena_test COMMAND orarena_test)
 
-target_link_libraries(orsound_test PRIVATE orsound)
+target_link_libraries(orwindow_test PRIVATE orwindow orarena)
+add_test(NAME orwindow_test COMMAND orwindow_test)
+
+target_link_libraries(orsound_test PRIVATE orsound orarena)
 add_test(NAME orsound_test COMMAND orsound_test)
