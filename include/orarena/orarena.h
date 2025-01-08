@@ -6,6 +6,7 @@
 #define ORARENA_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 #define MAX_ALIGNMENT 16
 
@@ -26,6 +27,24 @@ struct ORArena {
     size_t used_size;
     size_t previous_size;
     struct ORArena *parent;
+    void *memory;
+};
+
+/**
+ *
+ * memory will be divided in two
+ * Memory Layout:
+ * [ORArenaPool struct]->memory[Free List Region][Chunks Region ------>]
+ *                             ^                 ^
+ *                             |                 |
+ *                             ptrs to chunks    actual data starts here
+ */
+struct ORArenaPool {
+    uint32_t chunks_in_pool; // Chunks available in the pool list
+    uint32_t chunks_allocated;
+    uint32_t chunks_total;
+    size_t chunk_size;
+    size_t alignment;
     void *memory;
 };
 
@@ -105,6 +124,20 @@ arena_reset(struct ORArena *arena);
  */
 struct ORArena *
 sub_arena_create(struct ORArena *arena, size_t initial_size);
+
+struct ORArenaPool *
+sub_arena_pool_create(struct ORArena *parent_arena, size_t chunk_size,
+                      uint32_t chunk_count);
+
+struct ORArenaPool *
+sub_arena_pool_create_aligned(struct ORArena *parent_arena, size_t chunk_size,
+                              uint32_t chunk_count, size_t alignment);
+
+void *
+sub_arena_pool_alloc(struct ORArenaPool *pool_arena);
+
+void
+sub_arena_pool_free(struct ORArenaPool *pool_arena, void *ptr_to_free);
 
 /**
  * @brief Destroys a sub-arena
